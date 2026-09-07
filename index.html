@@ -6,6 +6,33 @@
     <title>Odonto Pro - Gestão Avançada</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- SDKs do Firebase (Modular v9/v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Substitua pelas credenciais fornecidas no seu console do Firebase
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "seu-projeto.firebaseapp.com",
+            databaseURL: "https://seu-projeto-default-rtdb.firebaseio.com",
+            projectId: "seu-projeto",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abc123def456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.fbSDK = { signInWithEmailAndPassword, signOut, onAuthStateChanged, ref, set, get, child, onValue };
+    </script>
+
     <style>
         :root { 
             --primary: #2508c5; 
@@ -17,10 +44,19 @@
             --bg: #f4f7fe; 
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-        body { min-height: 100vh; background: #0b0b2b url('https://github.com/KleytonMangas/OdontoPro/blob/main/Azul.jpg') no-repeat center center fixed; background-size: cover; display: flex; justify-content: center; align-items: center; }
+        
+        /* Imagem de Fundo de Alta Resolução Ajustada para Web/GitHub */
+        body { 
+            min-height: 100vh; 
+            background: #0b0b2b url('https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Azul.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
 
         /* Login */
-        #login-section { width: 420px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); padding: 40px; border-radius: 15px; color: white; text-align: center; }
+        #login-section { width: 420px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); padding: 40px; border-radius: 15px; color: white; text-align: center; }
         #main-system { display: none; width: 98%; max-width: 1600px; height: 95vh; background: var(--bg); border-radius: 20px; overflow: hidden; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
         /* Navigation */
@@ -28,7 +64,6 @@
         .tab-btn { padding: 8px 14px; color: white; cursor: pointer; border-radius: 8px; transition: 0.3s; display: flex; align-items: center; gap: 5px; font-size: 13px; }
         .tab-btn.active { background: white; color: var(--primary); font-weight: bold; }
         
-        /* Informações do Usuário Logado */
         .user-info { margin-left: auto; color: white; font-size: 13px; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.15); padding: 6px 12px; border-radius: 8px; }
         .user-info i { font-size: 18px; color: var(--accent); }
         .logout-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
@@ -37,12 +72,10 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Secondary Tabs (Sub-abas) */
         .sub-nav { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px; flex-wrap: wrap; }
         .sub-btn { padding: 6px 12px; background: #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
         .sub-btn.active { background: var(--secondary); color: white; }
 
-        /* UI Components */
         .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
@@ -51,33 +84,10 @@
         input, select, textarea { padding: 9px; border: 1px solid #ddd; border-radius: 8px; width: 100%; font-size: 13px; }
         button.save-btn { background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; grid-column: 1 / -1; }
         
-        /* Dropdown de Busca de Paciente no Agendamento */
         .custom-select-wrapper { position: relative; width: 100%; }
-        .custom-select-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            max-height: 180px;
-            overflow-y: auto;
-            z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .custom-select-item {
-            padding: 8px 12px;
-            font-size: 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .custom-select-item:hover {
-            background-color: #f4f7fe;
-            color: var(--primary);
-            font-weight: bold;
-        }
+        .custom-select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 180px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; }
+        .custom-select-item { padding: 8px 12px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .custom-select-item:hover { background-color: #f4f7fe; color: var(--primary); font-weight: bold; }
 
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; margin-top: 10px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
@@ -87,12 +97,10 @@
         .btn-edit { background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-right: 5px; }
         .btn-view { background: var(--primary); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-right: 5px; }
 
-        /* Details View Grid */
         .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; background: #f9fbfd; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
         .detail-item { font-size: 12px; }
         .detail-item strong { display: block; color: var(--primary); font-size: 11px; text-transform: uppercase; }
 
-        /* Calendário e Layout Duplo */
         .cal-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
         .mini-cal { text-align: center; background: #fff; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
         .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: 11px; margin-top: 10px; }
@@ -105,16 +113,13 @@
         .calendar-day { background: white; min-height: 90px; padding: 5px; border: 1px solid #eee; cursor: pointer; }
         .event-tag { background: #eef2ff; font-size: 10px; padding: 2px; border-left: 3px solid var(--primary); margin-top: 2px; }
 
-        /* Odontograma */
         .teeth-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; margin: 15px 0; text-align: center; }
         .tooth-box { border: 1px solid #ccc; padding: 5px; border-radius: 4px; font-size: 11px; cursor: pointer; background: #fff; }
         .tooth-box.marked { background: var(--danger); color: white; }
 
-        /* Modais e Painéis */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 12px; padding: 20px; max-height: 85vh; overflow-y: auto; }
         
-        /* Badges e Cards Financeiros */
         .fin-card { padding: 15px; border-radius: 10px; color: white; }
         .fin-green { background: #2e7d32; }
         .fin-red { background: #c62828; }
@@ -128,13 +133,12 @@
 
     <!-- LOGIN -->
     <div id="login-section">
-        <h1>Odonto Pro</h1>
+        <h1 style="margin-bottom: 20px;">Odonto Pro</h1>
         <form id="login-form">
-            <input type="text" id="user" placeholder="Usuário" required style="margin-bottom:10px">
+            <input type="email" id="user" placeholder="E-mail" required style="margin-bottom:10px">
             <input type="password" id="pass" placeholder="Senha" required style="margin-bottom:10px">
             <button type="submit" style="width:100%; padding:12px; border-radius:20px; border:none; cursor:pointer; background: white; color: var(--primary); font-weight: bold; margin-bottom: 15px;">Entrar</button>
         </form>
-        <a href="#" onclick="forgotPassword()" style="color: white; font-size: 13px; text-decoration: none;">Esqueceu a senha?</a>
     </div>
 
     <!-- SISTEMA PRINCIPAL -->
@@ -146,13 +150,12 @@
             <div class="tab-btn" onclick="openTab('aba-fin')"><i class='bx bx-dollar-circle'></i> Financeiro</div>
             <div class="tab-btn" onclick="openTab('aba-config')"><i class='bx bx-cog'></i> Usuários</div>
             
-            <!-- ESPAÇO PARA MOSTRAR O USUÁRIO LOGADO -->
             <div class="user-info" id="user-display">
                 <i class='bx bx-user-circle'></i>
                 <span id="logged-username">Carregando...</span>
             </div>
 
-            <button class="logout-btn" onclick="location.reload()">Sair</button>
+            <button class="logout-btn" onclick="logout()">Sair</button>
         </nav>
 
         <div class="content-area">
@@ -188,7 +191,6 @@
                             <form class="grid-form" onsubmit="saveAgenda(event)">
                                 <select id="a-dr" required><option value="">Dr(a)...</option></select>
                                 
-                                <!-- Seleção Inteligente de Paciente por Nome ou CPF -->
                                 <div class="custom-select-wrapper">
                                     <input type="text" id="a-paciente-search" placeholder="Buscar por Nome ou CPF..." autocomplete="off" oninput="filterPatientDropdown()" onfocus="filterPatientDropdown()" required>
                                     <input type="hidden" id="a-paciente" required>
@@ -229,13 +231,12 @@
                     <div class="sub-btn" onclick="openSubTab('cli-retorno', this)">Lista de Retorno</div>
                 </div>
 
-                <!-- Sub-aba Cadastro de Paciente -->
                 <div id="cli-cadastro" class="sub-content">
                     <div id="paciente-form-view">
                         <div class="card">
                             <h3>Novo Cadastro de Paciente</h3>
                             <form class="grid-form" onsubmit="saveClient(event)">
-                                <div class="form-group"><label>ID</label><input type="text" id="c-id" placeholder="ID (Auto/Opcional)"></div>
+                                <div class="form-group"><label>ID</label><input type="text" id="c-id" placeholder="ID (Auto)"></div>
                                 <div class="form-group"><label>Número</label><input type="text" id="c-numero" placeholder="Número da Ficha" readonly style="background-color: #f0f0f0;"></div>
                                 <div class="form-group"><label>Nome Completo *</label><input type="text" id="c-nome" placeholder="Nome Completo" required></div>
                                 <div class="form-group"><label>Profissão</label><input type="text" id="c-profissao" placeholder="Profissão"></div>
@@ -286,7 +287,6 @@
                     </div>
                 </div>
 
-                <!-- Sub-aba Busca Paciente -->
                 <div id="cli-busca" class="sub-content" style="display:none">
                     <div id="paciente-search-list-view">
                         <div class="card">
@@ -308,11 +308,9 @@
                         </div>
                     </div>
 
-                    <!-- Ficha Detalhada do Paciente -->
                     <div id="paciente-detalhe-view" style="display:none">
                         <button onclick="backToClientes()" style="margin-bottom:10px; cursor:pointer"><i class='bx bx-left-arrow-alt'></i> Voltar para Busca</button>
                         
-                        <!-- Card Resumido com Toggle para Dados Cadastrais Completo -->
                         <div class="card" style="margin-top:10px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                 <div>
@@ -326,9 +324,7 @@
                             
                             <div id="patient-info-container" style="display:none; margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
                                 <h4 style="margin-bottom:10px; color:var(--primary);"><i class='bx bx-id-card'></i> Dados Cadastrais do Paciente</h4>
-                                <div class="detail-grid" id="patient-info-display">
-                                    <!-- Preenchido dinamicamente -->
-                                </div>
+                                <div class="detail-grid" id="patient-info-display"></div>
                             </div>
                         </div>
 
@@ -343,7 +339,6 @@
                             <div class="sub-btn" onclick="openPacSub('p-arq', this)">Arquivos / Fotos</div>
                         </div>
 
-                        <!-- Visão Geral -->
                         <div id="p-vis" class="pac-tab">
                             <div class="grid-4">
                                 <div class="card">
@@ -372,7 +367,6 @@
                             </div>
                         </div>
 
-                        <!-- Anamneses -->
                         <div id="p-ana" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Novo Relatório de Anamnese</h4>
@@ -394,7 +388,6 @@
                             </div>
                         </div>
 
-                        <!-- Orçamentos -->
                         <div id="p-orc" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Novo Orçamento</h4>
@@ -413,7 +406,6 @@
                             </div>
                         </div>
 
-                        <!-- Tratamentos -->
                         <div id="p-tra" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Tratamentos e Odontograma</h4>
@@ -437,7 +429,6 @@
                             </div>
                         </div>
 
-                        <!-- Pagamentos -->
                         <div id="p-pag" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Registrar Pagamento do Paciente</h4>
@@ -466,7 +457,6 @@
                             </div>
                         </div>
 
-                        <!-- Evolução -->
                         <div id="p-evo" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Nova Evolução Clínica</h4>
@@ -496,7 +486,6 @@
                             </div>
                         </div>
 
-                        <!-- Documentos -->
                         <div id="p-doc" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Emissão de Documentos</h4>
@@ -510,7 +499,6 @@
                             </div>
                         </div>
 
-                        <!-- Arquivos / Fotos -->
                         <div id="p-arq" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Upload de Arquivos e Raio-X</h4>
@@ -521,7 +509,6 @@
                     </div>
                 </div>
 
-                <!-- Sub-aba Lista de Retorno -->
                 <div id="cli-retorno" class="sub-content" style="display:none">
                     <div class="card">
                         <h3>Pacientes para Agendamento de Retorno</h3>
@@ -589,7 +576,6 @@
             <div id="aba-config" class="tab-content">
                 <h2>Gerenciamento de Usuários</h2>
                 
-                <!-- Formulário Exclusivo do Administrador -->
                 <div class="card" id="card-cadastro-usuario">
                     <h3>Cadastro de Usuário</h3>
                     <form class="grid-form" onsubmit="createUser(event)">
@@ -631,14 +617,6 @@
                             <input type="text" id="new-cro" placeholder="Nº do CRO">
                         </div>
                         <div class="form-group">
-                            <label>Nome de Usuário (Login) *</label>
-                            <input type="text" id="new-user" placeholder="Usuário" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Senha *</label>
-                            <input type="password" id="new-pass" placeholder="Senha" required>
-                        </div>
-                        <div class="form-group">
                             <label>Função *</label>
                             <select id="new-role" required>
                                 <option value="dentista">Dr / Dentista</option>
@@ -656,12 +634,10 @@
                             <tr>
                                 <th>Nome Completo</th>
                                 <th>E-mail</th>
-                                <th>Usuário</th>
                                 <th>Função</th>
                                 <th>CPF</th>
                                 <th>CRO / UF</th>
                                 <th>Telefone</th>
-                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -672,7 +648,7 @@
         </div>
     </div>
 
-    <!-- MODAL DIA AGENDAMENTOS -->
+    <!-- MODAIS -->
     <div id="modal-day-events" class="modal">
         <div class="modal-content">
             <h3 id="modal-date-title">Agendamentos do Dia</h3>
@@ -684,7 +660,6 @@
         </div>
     </div>
 
-    <!-- MODAL INADIMPLENTES -->
     <div id="modal-inad" class="modal">
         <div class="modal-content">
             <h3>Lista de Pacientes Inadimplentes</h3>
@@ -696,7 +671,6 @@
         </div>
     </div>
 
-    <!-- MODAL DETALHE DE ANAMNESE -->
     <div id="modal-ana-view" class="modal">
         <div class="modal-content">
             <h3 id="ana-modal-title">Detalhes do Relatório de Anamnese</h3>
@@ -709,114 +683,86 @@
     <script>
         let currentMonth = new Date();
         let selectedPatientId = null;
-        let currentUserRole = 'admin';
+        let currentUserRole = 'dentista';
         let currentLoggedUser = null;
+        let dbPatients = [];
+        let dbAgenda = [];
+        let dbUsers = [];
 
-        // --- CARREGAMENTO INICIAL DE DADOS DA PLANILHA XLSX ---
-        const initialXlsxData = [
-            {"ID": 6196052, "Numero": 2, "Nome completo": "MAURO", "Profissão": "", "CPF": "", "RG": "", "Data de nascimento": "", "Sexo": "Masculino", "Responsável nome": "", "Responsável data de nascimento": "", "Responsável documento": "", "CEP": "", "Endereço": "", "Complemento": "", "Bairro": "", "Cidade": "", "Estado": "", "Email": "", "Celular": "(91) 99159-2105", "Contato de emergência nome": "", "Contato de emergência telefone": "", "Telefone": "", "Nome do plano": "Particular", "Numero da carterinha": "", "CPF do titular": "", "Observações": "Possui lentes superior e inferior; queixa de descolamento das lentes; abfração na cervical elementos 34,35", "Como conheceu": "Indicação de outro dentista", "Data de criação": "2025-10-28", "Última consulta": "2026-01-10", "Categorias": "Prótese"},
-            {"ID": 6201782, "Numero": 3, "Nome completo": "KELLY OHANA DE MANGAS DOS SANTOS", "Profissão": "EMPRESARIA", "CPF": "941.535.902-15", "RG": "376481", "Data de nascimento": "1987-04-26", "Sexo": "Feminino", "Responsável nome": "", "Responsável data de nascimento": "", "Responsável documento": "", "CEP": "68908-420", "Endereço": "Avenida José Ferreira do Amaral, 120", "Complemento": "", "Bairro": "São Lázaro", "Cidade": "Macapá", "Estado": "AP", "Email": "K.OHANA62@GMAIL.COM", "Celular": "(96) 98402-9923", "Contato de emergência nome": "ENIO SILVA E SILVA", "Contato de emergência telefone": "(96) 98402-2100", "Telefone": "", "Nome do plano": "Particular", "Numero da carterinha": "", "CPF do titular": "", "Observações": "", "Como conheceu": "Indicação familiar", "Data de criação": "2025-10-28", "Última consulta": "", "Categorias": "VIP"},
-            {"ID": 6201889, "Numero": 4, "Nome completo": "ALEXSANDRA SANCHES BARBOSA", "Profissão": "SECRETARIA DA SAUDE", "CPF": "634.331.062-15", "RG": "252250", "Data de nascimento": "1980-08-01", "Sexo": "Feminino", "Responsável nome": "", "Responsável data de nascimento": "", "Responsável documento": "", "CEP": "68908-000", "Endereço": "Rua Leopoldo Machado, 1021", "Complemento": "", "Bairro": "Trem", "Cidade": "Macapá", "Estado": "AP", "Email": "ALEXSANDRAGABRIEL30@GMAIL.COM", "Celular": "(96) 99121-6893", "Contato de emergência nome": "ELIVANE BARBOSA DE OLIVEIRA", "Contato de emergência telefone": "(96) 98114-1594", "Telefone": "", "Nome do plano": "Particular", "Numero da carterinha": "", "CPF do titular": "", "Observações": "Aparelho ortodôntico estético", "Como conheceu": "Instagram", "Data de criação": "2025-10-28", "Última consulta": "2026-03-05", "Categorias": "Ortodontia"},
-            {"ID": 6202150, "Numero": 5, "Nome completo": "THIAGO SILVA PEREIRA", "Profissão": "ENGENHEIRO", "CPF": "702.114.582-49", "RG": "412589", "Data de nascimento": "1992-11-15", "Sexo": "Masculino", "Responsável nome": "", "Responsável data de nascimento": "", "Responsável documento": "", "CEP": "68901-200", "Endereço": "Rua Hamilton Silva, 450", "Complemento": "Apt 201", "Bairro": "Central", "Cidade": "Macapá", "Estado": "AP", "Email": "THIAGO.ENGO@GMAIL.COM", "Celular": "(96) 98112-4455", "Contato de emergência nome": "MARIA PEREIRA", "Contato de emergência telefone": "(96) 98112-0011", "Telefone": "", "Nome do plano": "Unimed Odonto", "Numero da carterinha": "88521479", "CPF do titular": "702.114.582-49", "Observações": "Sensibilidade nos molares", "Como conheceu": "Google", "Data de criação": "2025-10-29", "Última consulta": "2026-02-18", "Categorias": "Clínica Geral"},
-            {"ID": 6203001, "Numero": 6, "Nome completo": "BEATRIZ LIMA FARIAS", "Profissão": "ESTUDANTE", "CPF": "021.554.782-90", "RG": "521478", "Data de nascimento": "2005-03-12", "Sexo": "Feminino", "Responsável nome": "CARLOS FARIAS", "Responsável data de nascimento": "1975-05-20", "Responsável documento": "312.458.962-00", "CEP": "68902-120", "Endereço": "Av. FAB, 1500", "Complemento": "", "Bairro": "Santa Rita", "Cidade": "Macapá", "Estado": "AP", "Email": "BIA.FARIAS@OUTLOOK.COM", "Celular": "(96) 99188-3322", "Contato de emergência nome": "CARLOS FARIAS", "Contato de emergência telefone": "(96) 99188-1100", "Telefone": "", "Nome do plano": "Particular", "Numero da carterinha": "", "CPF do titular": "", "Observações": "Manutenção Ortodôntica mensal", "Como conheceu": "Indicação de amigo", "Data de criação": "2025-11-01", "Última consulta": "2026-03-10", "Categorias": "Ortodontia"}
-        ];
+        // --- INTEGRAÇÃO E AUTENTICAÇÃO FIREBASE ---
+        window.addEventListener('load', () => {
+            const checkFirebase = setInterval(() => {
+                if (window.firebaseAuth && window.fbSDK) {
+                    clearInterval(checkFirebase);
+                    initFirebaseApp();
+                }
+            }, 100);
+        });
 
-        function initPatientStorage() {
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            if (!clientes || clientes.length === 0) {
-                clientes = initialXlsxData.map(item => ({
-                    id: item.ID || Date.now() + Math.floor(Math.random()*1000),
-                    numero: item.Numero ? String(item.Numero).padStart(2, '0') : '01',
-                    nome: item["Nome completo"] || '',
-                    profissao: item["Profissão"] || '',
-                    cpf: item.CPF || '',
-                    rg: item.RG || '',
-                    nasc: item["Data de nascimento"] || '',
-                    sexo: item.Sexo || '',
-                    respNome: item["Responsável nome"] || '',
-                    respNasc: item["Responsável data de nascimento"] || '',
-                    respDoc: item["Responsável documento"] || '',
-                    cep: item.CEP || '',
-                    end: item["Endereço"] || '',
-                    complemento: item.Complemento || '',
-                    bairro: item.Bairro || '',
-                    cidade: item.Cidade || '',
-                    estado: item.Estado || '',
-                    email: item.Email || '',
-                    cel: item.Celular || '',
-                    emergNome: item["Contato de emergência nome"] || '',
-                    emergTel: item["Contato de emergência telefone"] || '',
-                    tel: item.Telefone || '',
-                    plano: item["Nome do plano"] || 'Particular',
-                    carteirinha: item["Numero da carterinha"] || '',
-                    titularCpf: item["CPF do titular"] || '',
-                    obs: item["Observações"] || '',
-                    conheceu: item["Como conheceu"] || '',
-                    criacao: item["Data de criação"] || new Date().toISOString().split('T')[0],
-                    ultConsulta: item["Última consulta"] || '',
-                    categorias: item.Categorias || '',
-                    tasks: [], teeth: {}, obsTeeth: "", ana: "", anaHistory: [], orc: [], pag: [], evo: [], arq: [], tratamentos: []
-                }));
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            }
+        function initFirebaseApp() {
+            window.fbSDK.onAuthStateChanged(window.firebaseAuth, (user) => {
+                if (user) {
+                    loadUserData(user.uid);
+                } else {
+                    document.getElementById('login-section').style.display = 'block';
+                    document.getElementById('main-system').style.display = 'none';
+                }
+            });
         }
 
-        // --- INICIALIZAÇÃO DE USUÁRIOS E SEGURANÇA ---
-        function getOrCreateUsers() {
-            let users = JSON.parse(localStorage.getItem('users')) || [];
-            let mangasIndex = users.findIndex(u => u.user === "Mangas");
-            if (mangasIndex === -1) {
-                users.push({ 
-                    id: 1, 
-                    nomeCompleto: "Kennedy de Mangas dos Santos", 
-                    user: "Mangas", 
-                    pass: "Bola01", 
-                    role: "admin", 
-                    email: "dr.kennedymangas@outlook.com", 
-                    genero: "Masculino", 
-                    nasc: "", 
-                    cel: "(96) 98137-4916", 
-                    cpf: "000.000.000-00", 
-                    croUf: "AP", 
-                    cro: "1170" 
-                });
-            } else {
-                users[mangasIndex].role = "admin";
-                users[mangasIndex].pass = "Bola01";
-            }
-            localStorage.setItem('users', JSON.stringify(users));
-            return users;
-        }
-
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const users = getOrCreateUsers();
-            const userInput = document.getElementById('user').value.trim();
-            const passInput = document.getElementById('pass').value.trim();
-            const found = users.find(u => u.user === userInput && u.pass === passInput);
-            
-            if(found) {
-                currentLoggedUser = found;
-                currentUserRole = found.role || 'dentista';
-                
-                // Exibe nome do usuário logado na barra de navegação
-                const displayName = found.nomeCompleto || found.user;
-                document.getElementById('logged-username').innerText = `${displayName} (${found.role ? found.role.toUpperCase() : 'USER'})`;
-                
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('main-system').style.display = 'flex';
-                init();
-            } else {
-                alert("Acesso negado! Verifique usuário e senha.");
+            const email = document.getElementById('user').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+
+            try {
+                await window.fbSDK.signInWithEmailAndPassword(window.firebaseAuth, email, pass);
+            } catch (err) {
+                alert("Erro ao realizar login: " + err.message);
             }
         });
 
-        function forgotPassword() {
-            const email = prompt("Digite seu e-mail para recuperação:");
-            if(email) {
-                const found = getOrCreateUsers().find(u => u.email === email);
-                alert(found ? `Senha simulada: ${found.pass}` : "E-mail não localizado.");
+        function logout() {
+            window.fbSDK.signOut(window.firebaseAuth);
+        }
+
+        async function loadUserData(uid) {
+            const dbRef = window.fbSDK.ref(window.firebaseDb);
+            
+            // Buscar Perfil do Usuário
+            const userSnap = await window.fbSDK.get(window.fbSDK.child(dbRef, `users/${uid}`));
+            if (userSnap.exists()) {
+                currentLoggedUser = userSnap.val();
+                currentUserRole = currentLoggedUser.role || 'dentista';
+                document.getElementById('logged-username').innerText = `${currentLoggedUser.nomeCompleto || currentLoggedUser.email} (${currentUserRole.toUpperCase()})`;
             }
+
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('main-system').style.display = 'flex';
+
+            // Observar Pacientes em Tempo Real
+            window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'pacientes'), (snapshot) => {
+                const data = snapshot.val();
+                dbPatients = data ? Object.values(data) : [];
+                renderClientes();
+                updateNextPatientNumberInput();
+            });
+
+            // Observar Agenda em Tempo Real
+            window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'agenda'), (snapshot) => {
+                const data = snapshot.val();
+                dbAgenda = data ? Object.values(data) : [];
+                renderCalendar();
+                renderListAgendamentos();
+            });
+
+            // Observar Usuários em Tempo Real
+            window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'users'), (snapshot) => {
+                const data = snapshot.val();
+                dbUsers = data ? Object.values(data) : [];
+                renderUsers();
+                updateSelects();
+            });
         }
 
         // --- NAVEGAÇÃO DE ABAS ---
@@ -849,13 +795,12 @@
             const grid = document.getElementById('calendar-grid');
             const display = document.getElementById('month-display');
             const drFilter = document.getElementById('filter-dr').value;
-            let agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
+            let agenda = dbAgenda;
             
             if(drFilter !== 'todos') agenda = agenda.filter(a => a.dr === drFilter);
             
             grid.innerHTML = '';
             
-            // Cabeçalho dos dias da semana no Calendário Grande: Domingo, Segunda, Terça, Quarta, Quinta, Sexta, Sábado
             const fullWeekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
             fullWeekDays.forEach(dayName => {
                 grid.innerHTML += `<div class="calendar-day-header">${dayName}</div>`;
@@ -884,7 +829,6 @@
             const mini = document.getElementById('mini-cal-grid');
             mini.innerHTML = '';
 
-            // Cabeçalho dos dias da semana no Calendário Pequeno: D-S-T-Q-Q-S-S
             const miniWeekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
             miniWeekDays.forEach(dayLetter => {
                 mini.innerHTML += `<div class="mini-day-header">${dayLetter}</div>`;
@@ -893,9 +837,7 @@
             const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-            for(let i=0; i<firstDay.getDay(); i++) {
-                mini.innerHTML += `<div class="mini-day"></div>`;
-            }
+            for(let i=0; i<firstDay.getDay(); i++) mini.innerHTML += `<div class="mini-day"></div>`;
 
             for(let d=1; d<=lastDay.getDate(); d++) {
                 const isToday = d === today.getDate() && currentMonth.getMonth() === today.getMonth() && currentMonth.getFullYear() === today.getFullYear();
@@ -904,8 +846,7 @@
         }
 
         function openDayModal(dateStr) {
-            const agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-            const evs = agenda.filter(a => a.data === dateStr);
+            const evs = dbAgenda.filter(a => a.data === dateStr);
             document.getElementById('modal-date-title').innerText = `Agendamentos (${dateStr})`;
             document.querySelector('#table-modal-day tbody').innerHTML = evs.map(e => `
                 <tr><td>${e.hora}</td><td>${e.paciente}</td><td>${e.dr}</td><td>${e.proc}</td></tr>
@@ -913,19 +854,15 @@
             document.getElementById('modal-day-events').style.display = 'flex';
         }
 
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // FUNÇÕES PARA A BUSCA DINÂMICA DE PACIENTE NO AGENDAMENTO
         function filterPatientDropdown() {
             const query = document.getElementById('a-paciente-search').value.toLowerCase().trim();
             const dropdown = document.getElementById('a-paciente-dropdown');
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
             
             document.getElementById('a-paciente').value = "";
 
-            const filtered = clientes.filter(c => 
+            const filtered = dbPatients.filter(c => 
                 (c.nome && c.nome.toLowerCase().includes(query)) || 
                 (c.cpf && c.cpf.includes(query))
             );
@@ -951,41 +888,29 @@
             document.getElementById('a-paciente-dropdown').style.display = 'none';
         }
 
-        document.addEventListener('click', (e) => {
-            const wrapper = document.querySelector('.custom-select-wrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
-                const dropdown = document.getElementById('a-paciente-dropdown');
-                if (dropdown) dropdown.style.display = 'none';
-            }
-        });
-
-        function saveAgenda(e) {
+        async function saveAgenda(e) {
             e.preventDefault();
             const pacienteVal = document.getElementById('a-paciente').value || document.getElementById('a-paciente-search').value;
-            if (!pacienteVal.trim()) {
-                alert("Por favor, selecione um paciente válido.");
-                return;
-            }
+            if (!pacienteVal.trim()) return alert("Selecione um paciente válido.");
 
-            const agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-            agenda.push({
-                id: Date.now(),
+            const id = Date.now().toString();
+            const newAgenda = {
+                id,
                 dr: document.getElementById('a-dr').value,
                 paciente: pacienteVal,
                 data: document.getElementById('a-data').value,
                 hora: document.getElementById('a-hora').value,
                 proc: document.getElementById('a-proc').value
-            });
-            localStorage.setItem('db_agenda', JSON.stringify(agenda));
-            renderCalendar();
-            renderListAgendamentos();
+            };
+
+            await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `agenda/${id}`), newAgenda);
             e.target.reset();
             document.getElementById('a-paciente-search').value = '';
             document.getElementById('a-paciente').value = '';
         }
 
         function renderListAgendamentos() {
-            let agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
+            let agenda = dbAgenda;
             const mFilter = document.getElementById('filter-ag-month').value;
             const dFilter = document.getElementById('filter-ag-date').value;
 
@@ -995,7 +920,7 @@
             document.querySelector('#table-agendamentos tbody').innerHTML = agenda.map(a => `
                 <tr>
                     <td>${a.data}</td><td>${a.hora}</td><td>${a.paciente}</td><td>${a.dr}</td><td>${a.proc}</td>
-                    <td><button class="btn-delete" onclick="cancelAgenda(${a.id})">Excluir</button></td>
+                    <td><button class="btn-delete" onclick="cancelAgenda('${a.id}')">Excluir</button></td>
                 </tr>
             `).join('');
         }
@@ -1006,65 +931,38 @@
             renderListAgendamentos();
         }
 
-        function cancelAgenda(id) {
-            if(currentUserRole !== 'admin' && currentUserRole !== 'supervisor') {
-                return alert("Apenas Administradores ou Supervisores podem excluir agendamentos!");
-            }
-            if(confirm("Confirmar exclusão do agendamento?")) {
-                let agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-                localStorage.setItem('db_agenda', JSON.stringify(agenda.filter(a => a.id !== id)));
-                renderCalendar();
-                renderListAgendamentos();
+        async function cancelAgenda(id) {
+            if(currentUserRole !== 'admin' && currentUserRole !== 'supervisor') return alert("Sem permissão!");
+            if(confirm("Confirmar exclusão?")) {
+                await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `agenda/${id}`), null);
             }
         }
 
         // --- PACIENTES ---
         function getNextPatientNumber() {
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
             let maxNum = 0;
-            clientes.forEach(c => {
+            dbPatients.forEach(c => {
                 const num = parseInt(c.numero, 10);
-                if (!isNaN(num) && num > maxNum) {
-                    maxNum = num;
-                }
+                if (!isNaN(num) && num > maxNum) maxNum = num;
             });
-            const nextNum = maxNum + 1;
-            return String(nextNum).padStart(2, '0');
+            return String(maxNum + 1).padStart(2, '0');
         }
 
         function updateNextPatientNumberInput() {
             const numInput = document.getElementById('c-numero');
-            if (numInput) {
-                numInput.value = getNextPatientNumber();
-            }
+            if (numInput) numInput.value = getNextPatientNumber();
         }
 
-        function saveClient(e) {
+        async function saveClient(e) {
             e.preventDefault();
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
+            const id = document.getElementById('c-id').value ? document.getElementById('c-id').value : Date.now().toString();
             
-            const nomeInput = document.getElementById('c-nome').value.trim();
-            const cpfInput = document.getElementById('c-cpf').value.trim();
-
-            const existeDuplicado = clientes.some(c => {
-                const mesmoNome = c.nome && c.nome.trim().toLowerCase() === nomeInput.toLowerCase();
-                const mesmoCpf = cpfInput !== "" && c.cpf && c.cpf.trim() === cpfInput;
-                return mesmoNome || mesmoCpf;
-            });
-
-            if (existeDuplicado) {
-                alert("Atenção: Já existe um paciente cadastrado com este Nome ou CPF!");
-                return;
-            }
-
-            const autoNum = getNextPatientNumber();
-
             const newPatient = {
-                id: document.getElementById('c-id').value ? parseInt(document.getElementById('c-id').value) : Date.now(),
-                numero: autoNum,
-                nome: nomeInput,
+                id,
+                numero: getNextPatientNumber(),
+                nome: document.getElementById('c-nome').value.trim(),
                 profissao: document.getElementById('c-profissao').value,
-                cpf: cpfInput,
+                cpf: document.getElementById('c-cpf').value.trim(),
                 rg: document.getElementById('c-rg').value,
                 nasc: document.getElementById('c-nasc').value,
                 sexo: document.getElementById('c-sexo').value,
@@ -1089,25 +987,17 @@
                 conheceu: document.getElementById('c-conheceu').value,
                 criacao: document.getElementById('c-criacao').value || new Date().toISOString().split('T')[0],
                 ultConsulta: document.getElementById('c-ult-consulta').value,
-                categorias: document.getElementById('c-categorias').value,
-                tasks: [], teeth: {}, obsTeeth: "", ana: "", anaHistory: [], orc: [], pag: [], evo: [], arq: [], tratamentos: []
+                categorias: document.getElementById('c-categorias').value
             };
 
-            clientes.push(newPatient);
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            renderClientes();
-            updateSelects();
+            await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `pacientes/${id}`), newPatient);
             e.target.reset();
-            updateNextPatientNumberInput();
-            alert("Paciente cadastrado com sucesso!");
+            alert("Paciente cadastrado com sucesso no Firebase!");
         }
 
         function renderClientes() {
-            const searchInput = document.getElementById('search-cli');
-            if (!searchInput) return;
-            const query = searchInput.value.toLowerCase();
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
-            const filtered = clientes.filter(c => 
+            const query = document.getElementById('search-cli').value.toLowerCase();
+            const filtered = dbPatients.filter(c => 
                 (c.nome && c.nome.toLowerCase().includes(query)) || 
                 (c.cpf && c.cpf.includes(query)) ||
                 (c.cel && c.cel.includes(query))
@@ -1118,12 +1008,12 @@
                 tbody.innerHTML = filtered.map(c => `
                     <tr>
                         <td>${c.id}</td>
-                        <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="verFicha(${c.id})">${c.nome}</td>
+                        <td style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="verFicha('${c.id}')">${c.nome}</td>
                         <td>${c.cel || c.tel || '-'}</td>
                         <td>${c.cpf || '-'}</td>
                         <td>${c.plano || 'Particular'}</td>
                         <td>${c.categorias || '-'}</td>
-                        <td><button class="btn-view" onclick="verFicha(${c.id})">Abrir Ficha</button></td>
+                        <td><button class="btn-view" onclick="verFicha('${c.id}')">Abrir Ficha</button></td>
                     </tr>
                 `).join('');
             }
@@ -1132,7 +1022,9 @@
 
         function verFicha(id) {
             selectedPatientId = id;
-            const c = JSON.parse(localStorage.getItem('db_clientes')).find(p => p.id === id);
+            const c = dbPatients.find(p => String(p.id) === String(id));
+            if (!c) return;
+
             document.getElementById('paciente-search-list-view').style.display = 'none';
             document.getElementById('paciente-detalhe-view').style.display = 'block';
             
@@ -1140,54 +1032,23 @@
             document.getElementById('summary-cel').innerText = `📱 Celular / WhatsApp: ${c.cel || c.tel || 'Não informado'}`;
             
             document.getElementById('patient-info-container').style.display = 'none';
-            document.getElementById('btn-toggle-dados').innerHTML = "<i class='bx bx-chevron-down'></i> Exibir Dados Cadastrais";
 
             const infoBox = document.getElementById('patient-info-display');
             infoBox.innerHTML = `
                 <div class="detail-item"><strong>ID:</strong> ${c.id || '-'}</div>
                 <div class="detail-item"><strong>Número:</strong> ${c.numero || '-'}</div>
                 <div class="detail-item"><strong>Nome Completo:</strong> ${c.nome || '-'}</div>
-                <div class="detail-item"><strong>Profissão:</strong> ${c.profissao || '-'}</div>
                 <div class="detail-item"><strong>CPF:</strong> ${c.cpf || '-'}</div>
-                <div class="detail-item"><strong>RG:</strong> ${c.rg || '-'}</div>
                 <div class="detail-item"><strong>Data Nascimento:</strong> ${c.nasc || '-'}</div>
-                <div class="detail-item"><strong>Sexo:</strong> ${c.sexo || '-'}</div>
-                <div class="detail-item"><strong>Responsável Nome:</strong> ${c.respNome || '-'}</div>
-                <div class="detail-item"><strong>Responsável Nasc.:</strong> ${c.respNasc || '-'}</div>
-                <div class="detail-item"><strong>Responsável Doc.:</strong> ${c.respDoc || '-'}</div>
-                <div class="detail-item"><strong>CEP:</strong> ${c.cep || '-'}</div>
-                <div class="detail-item"><strong>Endereço:</strong> ${c.end || '-'}</div>
-                <div class="detail-item"><strong>Complemento:</strong> ${c.complemento || '-'}</div>
-                <div class="detail-item"><strong>Bairro:</strong> ${c.bairro || '-'}</div>
-                <div class="detail-item"><strong>Cidade/UF:</strong> ${c.cidade ? c.cidade + '/' + c.estado : '-'}</div>
-                <div class="detail-item"><strong>Email:</strong> ${c.email || '-'}</div>
                 <div class="detail-item"><strong>Celular:</strong> ${c.cel || '-'}</div>
-                <div class="detail-item"><strong>Telefone Fixo:</strong> ${c.tel || '-'}</div>
-                <div class="detail-item"><strong>Contato Emergência:</strong> ${c.emergNome ? c.emergNome + ' (' + c.emergTel + ')' : '-'}</div>
                 <div class="detail-item"><strong>Plano de Saúde:</strong> ${c.plano || '-'}</div>
-                <div class="detail-item"><strong>Nº Carteirinha:</strong> ${c.carteirinha || '-'}</div>
-                <div class="detail-item"><strong>CPF Titular:</strong> ${c.titularCpf || '-'}</div>
-                <div class="detail-item"><strong>Como Conheceu:</strong> ${c.conheceu || '-'}</div>
-                <div class="detail-item"><strong>Data Criação:</strong> ${c.criacao || '-'}</div>
-                <div class="detail-item"><strong>Última Consulta:</strong> ${c.ultConsulta || '-'}</div>
-                <div class="detail-item"><strong>Categorias:</strong> ${c.categorias || '-'}</div>
                 <div class="detail-item" style="grid-column: 1 / -1;"><strong>Observações:</strong> ${c.obs || '-'}</div>
             `;
-
-            loadTeethGrids();
-            loadPatientData();
         }
 
         function toggleDadosCadastrais() {
             const container = document.getElementById('patient-info-container');
-            const btn = document.getElementById('btn-toggle-dados');
-            if (container.style.display === 'none' || container.style.display === '') {
-                container.style.display = 'block';
-                btn.innerHTML = "<i class='bx bx-chevron-up'></i> Ocultar Dados Cadastrais";
-            } else {
-                container.style.display = 'none';
-                btn.innerHTML = "<i class='bx bx-chevron-down'></i> Exibir Dados Cadastrais";
-            }
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
         }
 
         function backToClientes() {
@@ -1195,597 +1056,15 @@
             document.getElementById('paciente-detalhe-view').style.display = 'none';
         }
 
-        // --- ODONTOGRAMA ---
-        function loadTeethGrids() {
-            const permContainer = document.getElementById('teeth-perm-view');
-            const decContainer = document.getElementById('teeth-dec-view');
-            permContainer.innerHTML = ''; decContainer.innerHTML = '';
-            
-            const perms = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
-            const decs = [55,54,53,52,51,61,62,63,64,65,85,84,83,82,81,71,72,73,74,75];
-
-            const c = JSON.parse(localStorage.getItem('db_clientes')).find(p => p.id === selectedPatientId);
-
-            perms.forEach(t => {
-                const isMarked = c.teeth && c.teeth[t];
-                permContainer.innerHTML += `<div class="tooth-box ${isMarked ? 'marked' : ''}" onclick="toggleTooth(${t})">${t}</div>`;
-            });
-            decs.forEach(t => {
-                const isMarked = c.teeth && c.teeth[t];
-                decContainer.innerHTML += `<div class="tooth-box ${isMarked ? 'marked' : ''}" onclick="toggleTooth(${t})">${t}</div>`;
-            });
-            document.getElementById('teeth-obs').value = c.obsTeeth || '';
-        }
-
-        function toggleTooth(num) {
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.teeth) c.teeth = {};
-            c.teeth[num] = !c.teeth[num];
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            loadTeethGrids();
-        }
-
-        function toggleTeethType(type) {
-            document.getElementById('teeth-perm-view').style.display = type === 'perm' ? 'grid' : 'none';
-            document.getElementById('teeth-dec-view').style.display = type === 'dec' ? 'grid' : 'none';
-        }
-
-        function saveTeethObs() {
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            c.obsTeeth = document.getElementById('teeth-obs').value;
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-        }
-
-        // --- FICHA DO PACIENTE INTERNA ---
-        function loadPatientData() {
-            const c = JSON.parse(localStorage.getItem('db_clientes')).find(p => p.id === selectedPatientId);
-            
-            // Tarefas / Lembretes
-            const taskList = document.getElementById('task-list');
-            taskList.innerHTML = (c.tasks || []).map((t, idx) => `
-                <li class="task-item">
-                    <span>- ${t}</span>
-                    <div>
-                        <button class="btn-edit" onclick="editTask(${idx})">Editar</button>
-                        ${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deleteTask(${idx})">Excluir</button>` : ''}
-                    </div>
-                </li>
-            `).join('');
-            
-            // Histórico Consultas
-            const agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-            const cons = agenda.filter(a => a.paciente === c.nome);
-            document.querySelector('#table-hist-consultas tbody').innerHTML = cons.map(k => `
-                <tr>
-                    <td>${k.data}</td><td>${k.dr}</td><td>${k.proc}</td>
-                    <td>${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deleteHistConsulta(${k.id})">Excluir</button>` : '-'}</td>
-                </tr>
-            `).join('');
-
-            // Anamnese
-            document.getElementById('ana-text').value = c.ana || '';
-            renderAnaHistory(c.anaHistory || []);
-
-            // Orçamentos
-            document.querySelector('#table-orcamentos tbody').innerHTML = (c.orc || []).map(o => `<tr><td>${o.desc}</td><td>${o.val}</td></tr>`).join('');
-
-            // Tratamentos Histórico
-            renderTratamentosHistory(c.tratamentos || []);
-
-            // Pagamentos
-            document.querySelector('#table-pag-paciente tbody').innerHTML = (c.pag || []).map((p, idx) => `
-                <tr>
-                    <td>${p.data}</td><td>${p.forma}</td><td>${p.status}</td><td>${p.val}</td>
-                    <td>${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deletePatientPayment(${idx})">Excluir</button>` : '-'}</td>
-                </tr>
-            `).join('');
-
-            // Evolução
-            renderEvolucaoHistory(c.evo || []);
-
-            // Arquivos
-            renderArquivos(c.arq || []);
-        }
-
-        function addTask() {
-            const txt = document.getElementById('task-text').value;
-            if(!txt) return;
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.tasks) c.tasks = [];
-            c.tasks.push(txt);
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            document.getElementById('task-text').value = '';
-            loadPatientData();
-        }
-
-        function editTask(idx) {
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            const current = c.tasks[idx];
-            const updated = prompt("Editar Tarefa / Lembrete:", current);
-            if (updated !== null && updated.trim() !== "") {
-                c.tasks[idx] = updated.trim();
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                loadPatientData();
-            }
-        }
-
-        function deleteTask(idx) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir tarefas!");
-            }
-            if (confirm("Deseja excluir esta tarefa?")) {
-                let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-                let c = clientes.find(p => p.id === selectedPatientId);
-                c.tasks.splice(idx, 1);
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                loadPatientData();
-            }
-        }
-
-        function deleteHistConsulta(agendaId) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir o histórico de consulta!");
-            }
-            if (confirm("Deseja excluir esta consulta do histórico?")) {
-                let agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-                agenda = agenda.filter(a => a.id !== agendaId);
-                localStorage.setItem('db_agenda', JSON.stringify(agenda));
-                loadPatientData();
-                renderCalendar();
-                renderListAgendamentos();
-            }
-        }
-
-        function saveAna() {
-            const txt = document.getElementById('ana-text').value.trim();
-            if (!txt) return alert("Digite o texto da anamnese antes de salvar.");
-            
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            
-            c.ana = txt;
-            if (!c.anaHistory) c.anaHistory = [];
-            
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-br') + ' ' + now.toLocaleTimeString('pt-br', { hour: '2-digit', minute: '2-digit' });
-            
-            c.anaHistory.unshift({
-                id: Date.now(),
-                dataHora: dateStr,
-                texto: txt
-            });
-            
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            alert("Relatório de anamnese salvo com sucesso!");
-            renderAnaHistory(c.anaHistory);
-        }
-
-        function renderAnaHistory(history) {
-            const tbody = document.querySelector('#table-ana-historico tbody');
-            if (!history || history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3">Nenhum relatório salvo anteriormente.</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = history.map(item => {
-                const preview = item.texto.length > 60 ? item.texto.substring(0, 60) + '...' : item.texto;
-                return `
-                    <tr>
-                        <td><b>${item.dataHora}</b></td>
-                        <td>${preview}</td>
-                        <td>
-                            <button class="btn-view" onclick="viewAnaReport(${item.id})">Visualizar</button>
-                            ${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deleteAnaReport(${item.id})">Excluir</button>` : ''}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function viewAnaReport(id) {
-            const c = JSON.parse(localStorage.getItem('db_clientes')).find(p => p.id === selectedPatientId);
-            const item = (c.anaHistory || []).find(a => a.id === id);
-            if (item) {
-                document.getElementById('ana-modal-date').innerText = `Data/Hora: ${item.dataHora}`;
-                document.getElementById('ana-modal-body').innerText = item.texto;
-                document.getElementById('modal-ana-view').style.display = 'flex';
-            }
-        }
-
-        function deleteAnaReport(id) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir relatórios de anamnese!");
-            }
-            if (confirm("Deseja excluir este relatório de anamnese do histórico?")) {
-                let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-                let c = clientes.find(p => p.id === selectedPatientId);
-                c.anaHistory = (c.anaHistory || []).filter(a => a.id !== id);
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                renderAnaHistory(c.anaHistory);
-            }
-        }
-
-        function saveOrcamento(e) {
-            e.preventDefault();
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.orc) c.orc = [];
-            c.orc.push({ desc: document.getElementById('orc-desc').value, val: document.getElementById('orc-val').value });
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            loadPatientData();
-            e.target.reset();
-        }
-
-        function addTratamentoReport() {
-            const obsText = document.getElementById('tra-obs').value.trim();
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-
-            const markedTeeth = [];
-            if (c.teeth) {
-                for (let tooth in c.teeth) {
-                    if (c.teeth[tooth]) markedTeeth.push(tooth);
-                }
-            }
-
-            if (markedTeeth.length === 0 && !obsText) {
-                return alert("Por favor, selecione ao menos um dente ou escreva uma observação antes de adicionar.");
-            }
-
-            if (!c.tratamentos) c.tratamentos = [];
-
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-br') + ' ' + now.toLocaleTimeString('pt-br', { hour: '2-digit', minute: '2-digit' });
-
-            c.tratamentos.unshift({
-                id: Date.now(),
-                dataHora: dateStr,
-                dentes: markedTeeth.length > 0 ? markedTeeth.join(', ') : 'Nenhum dente selecionado',
-                obs: obsText || 'Sem observações'
-            });
-
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            document.getElementById('tra-obs').value = '';
-            renderTratamentosHistory(c.tratamentos);
-            alert("Tratamento salvo e adicionado ao relatório histórico do paciente!");
-        }
-
-        function renderTratamentosHistory(tratamentos) {
-            const tbody = document.querySelector('#table-tratamentos-historico tbody');
-            if (!tbody) return;
-
-            if (!tratamentos || tratamentos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4">Nenhum tratamento registrado ainda.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = tratamentos.map(t => `
-                <tr>
-                    <td><b>${t.dataHora}</b></td>
-                    <td>${t.dentes}</td>
-                    <td>${t.obs}</td>
-                    <td>${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deleteTratamento(${t.id})">Excluir</button>` : '-'}</td>
-                </tr>
-            `).join('');
-        }
-
-        function deleteTratamento(id) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir relatórios de tratamento!");
-            }
-            if (confirm("Deseja excluir este registro de tratamento do histórico?")) {
-                let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-                let c = clientes.find(p => p.id === selectedPatientId);
-                c.tratamentos = (c.tratamentos || []).filter(t => t.id !== id);
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                renderTratamentosHistory(c.tratamentos);
-            }
-        }
-
-        function savePatientPayment(e) {
-            e.preventDefault();
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.pag) c.pag = [];
-            c.pag.push({
-                data: new Date().toLocaleDateString('pt-br'),
-                val: parseFloat(document.getElementById('pag-val').value).toFixed(2),
-                forma: document.getElementById('pag-forma').value,
-                status: document.getElementById('pag-status').value
-            });
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            loadPatientData();
-            renderFinanceiro();
-            e.target.reset();
-        }
-
-        function deletePatientPayment(idx) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir pagamentos!");
-            }
-            if (confirm("Deseja excluir este pagamento?")) {
-                let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-                let c = clientes.find(p => p.id === selectedPatientId);
-                c.pag.splice(idx, 1);
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                loadPatientData();
-                renderFinanceiro();
-            }
-        }
-
-        function toBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        async function saveEvolucao() {
-            const dr = document.getElementById('evo-dr').value;
-            const data = document.getElementById('evo-data').value;
-            const txt = document.getElementById('evo-texto').value;
-            const file = document.getElementById('evo-img').files[0];
-            let imgBase64 = file ? await toBase64(file) : null;
-
-            if(!txt.trim()) return alert("Descreva a evolução antes de salvar.");
-
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.evo) c.evo = [];
-
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-br') + ' ' + now.toLocaleTimeString('pt-br', { hour: '2-digit', minute: '2-digit' });
-
-            c.evo.unshift({ id: Date.now(), dataHora: dateStr, dr, data, txt, img: imgBase64 });
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            
-            document.getElementById('evo-texto').value = '';
-            document.getElementById('evo-img').value = '';
-            renderEvolucaoHistory(c.evo);
-            alert("Evolução salva com sucesso!");
-        }
-
-        function renderEvolucaoHistory(evoList) {
-            const tbody = document.querySelector('#table-evo-historico tbody');
-            if (!tbody) return;
-
-            if (!evoList || evoList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">Nenhuma evolução registrada ainda.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = evoList.map(e => `
-                <tr>
-                    <td><b>${e.dataHora || '-'}</b></td>
-                    <td>${e.data || '-'}</td>
-                    <td>${e.dr || '-'}</td>
-                    <td>${e.txt}</td>
-                    <td>${e.img ? `<img src="${e.img}" style="max-width:50px; cursor:pointer;" onclick="openImageWindow('${e.img}')">` : '-'}</td>
-                    <td>${currentUserRole === 'admin' ? `<button class="btn-delete" onclick="deleteEvolucao(${e.id})">Excluir</button>` : '-'}</td>
-                </tr>
-            `).join('');
-        }
-
-        function deleteEvolucao(id) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o usuário Administrador pode excluir relatórios de evolução!");
-            }
-            if (confirm("Deseja excluir este registro de evolução?")) {
-                let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-                let c = clientes.find(p => p.id === selectedPatientId);
-                c.evo = (c.evo || []).filter(e => e.id !== id);
-                localStorage.setItem('db_clientes', JSON.stringify(clientes));
-                renderEvolucaoHistory(c.evo);
-            }
-        }
-
-        // GERADOR DE MODELOS DE DOCUMENTOS EDITÁVEIS DENTRO DA FICHA
-        function generateDoc(tipo) {
-            const c = JSON.parse(localStorage.getItem('db_clientes')).find(p => p.id === selectedPatientId);
-            const prev = document.getElementById('doc-preview');
-            const dataHoje = new Date().toLocaleDateString('pt-br');
-            
-            const users = getOrCreateUsers();
-            const drAtual = users.find(u => u.role === 'admin') || users[0];
-
-            if(tipo === 'atestado') {
-                prev.value = `MANGAS & TÁVORA - CONSULTÓRIO ODONTOLÓGICO
-(96) 98137-4916 | dr.kennedymangas@outlook.com
-Avenida José Ferreira do Amaral, 120 - São Lázaro, Macapá/AP - CEP: 68908-420
-
---------------------------------------------------------------------------------
-                               ATESTADO ODONTOLÓGICO
---------------------------------------------------------------------------------
-
-Atesto, com o fim específico de dispensa de atividades trabalhistas (ou escolares, ou judiciárias), que o(a) Sr(a). ${c.nome.toUpperCase()}, portador(a) do CPF ${c.cpf || '_______________'}, esteve sob meus cuidados profissionais no dia ${dataHoje}, devendo permanecer em repouso por ____ dias.
-
-CID: ____________________________________________________
-
-Eu, ${c.nome.toUpperCase()}, autorizo que meu diagnóstico (CID) esteja presente neste atestado.
-
-
-________________________________________
-Assinatura do Paciente
-
-
-Macapá-AP, ${dataHoje}.
-
-
-________________________________________
-${drAtual.nomeCompleto || 'Kennedy de Mangas dos Santos'}
-CRO ${drAtual.cro || '1170'}-${drAtual.croUf || 'AP'}`;
-
-            } else if(tipo === 'prescricao') {
-                prev.value = `MANGAS & TÁVORA - CONSULTÓRIO ODONTOLÓGICO
-(96) 98137-4916 | dr.kennedymangas@outlook.com
-Avenida José Ferreira do Amaral, 120 - São Lázaro, Macapá/AP - CEP: 68908-420
-
---------------------------------------------------------------------------------
-                               RECEITUÁRIO MÉDICO
---------------------------------------------------------------------------------
-
-Paciente: ${c.nome.toUpperCase()}
-
-USO INTERNO:
-
-1. Paracetamol 200mg/mL ----------------------------------------- 1 Frasco
-   Tomar de 35 a 55 gotas via oral de 6 em 6 horas por 1 dia.
-
-2. Ibuprofeno 100mg/mL ------------------------------------------ 1 Frasco
-   Tomar de 20 a 40 gotas via oral 3 vezes ao dia por 3 dias.
-
-3. Amoxicilina 500mg -------------------------------------------- 1 Caixa
-   Tomar 1 cápsula via oral de 8 em 8 horas por 7 dias.
-
-
-Macapá-AP, ${dataHoje}.
-
-
-________________________________________
-${drAtual.nomeCompleto || 'Kennedy de Mangas dos Santos'}
-CRO ${drAtual.cro || '1170'}-${drAtual.croUf || 'AP'}`;
-
-            } else if(tipo === 'contrato') {
-                prev.value = `MANGAS & TÁVORA - CONSULTÓRIO ODONTOLÓGICO
-(96) 98137-4916 | dr.kennedymangas@outlook.com
-Avenida José Ferreira do Amaral, 120 - São Lázaro, Macapá/AP - CEP: 68908-420
-
---------------------------------------------------------------------------------
-             CONTRATO DE PRESTAÇÃO DE SERVIÇOS ODONTOLÓGICOS
---------------------------------------------------------------------------------
-
-Pelo presente instrumento particular de contrato de prestação de serviços odontológicos, os contratantes:
-
-CONTRATADO(A): ${drAtual.nomeCompleto || 'Kennedy de Mangas dos Santos'}, portador(a) do CPF n.º ${drAtual.cpf || '000.000.000-00'}, com consultório em Avenida José Ferreira do Amaral, 120, São Lázaro, Macapá/AP, CEP: 68908-420.
-
-CONTRATANTE: ${c.nome.toUpperCase()}, portador(a) do CPF n.º ${c.cpf || '_______________'}, residente e domiciliado(a) em ${c.end || '______________________________'}, ${c.bairro || '______________'}, ${c.cidade || 'Macapá'}/${c.estado || 'AP'}, CEP: ${c.cep || '________'}.
-
-Têm entre si justo e acordado o seguinte:
-
-1. DO OBJETO DO CONTRATO
-O(A) CONTRATADO(A) prestará ao CONTRATANTE os seguintes serviços odontológicos:
-- Procedimentos / Tratamentos: _________________________________________________
-- Elementos / Dentes: __________________________________________________________
-
-2. DO VALOR E FORMA DE PAGAMENTO
-O valor total dos honorários profissionais é de R$ ____________ (____________________), a ser pago da seguinte forma:
-(  ) À vista
-(  ) Parcelado em ____x de R$ ____________ no cartão / boleto / PIX.
-
-3. DAS OBRIGAÇÕES
-O CONTRATANTE se compromete a comparecer às consultas agendadas e seguir rigorosamente as prescrições do cirurgião-dentista.
-
-
-Macapá-AP, ${dataHoje}.
-
-
-________________________________________
-${drAtual.nomeCompleto || 'Kennedy de Mangas dos Santos'} (CONTRATADO)
-
-
-________________________________________
-${c.nome.toUpperCase()} (CONTRATANTE)`;
-            }
-        }
-
-        function printDocPDF() {
-            const text = document.getElementById('doc-preview').value;
-            if (!text) return alert("Gere um documento antes de imprimir.");
-            const win = window.open('', '_blank', 'width=800,height=600');
-            win.document.write(`
-                <html>
-                <head>
-                    <title>Imprimir Documento</title>
-                    <style>
-                        body { font-family: 'Poppins', sans-serif; padding: 40px; white-space: pre-wrap; font-size: 13px; line-height: 1.6; }
-                    </style>
-                </head>
-                <body>
-                    <div>${text.replace(/\n/g, '<br>')}</div>
-                    <script>
-                        window.onload = function() { window.print(); window.close(); }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            win.document.close();
-        }
-
-        async function uploadArquivos(e) {
-            const files = e.target.files;
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            if(!c.arq) c.arq = [];
-
-            for(let f of files) {
-                const b64 = await toBase64(f);
-                c.arq.push({ id: Date.now(), src: b64, type: f.type });
-            }
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            renderArquivos(c.arq);
-        }
-
-        function renderArquivos(arqs) {
-            const gal = document.getElementById('arq-gallery');
-            gal.innerHTML = arqs.map(a => `
-                <div style="position:relative;">
-                    <img src="${a.src}" style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ddd; cursor:pointer;" onclick="openImageWindow('${a.src}')">
-                    <button onclick="deleteArquivo(${a.id})" style="position:absolute; top:0; right:0; background:red; color:white; border:none; cursor:pointer; font-size:10px;">X</button>
-                </div>
-            `).join('');
-        }
-
-        function openImageWindow(src) {
-            const win = window.open('', '_blank');
-            win.document.write(`
-                <html>
-                <head>
-                    <title>Visualização de Imagem</title>
-                    <style>
-                        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; overflow: hidden; }
-                        img { width: 1920px; height: 1080px; object-fit: contain; }
-                    </style>
-                </head>
-                <body>
-                    <img src="${src}" alt="Imagem Ampliada">
-                </body>
-                </html>
-            `);
-            win.document.close();
-        }
-
-        function deleteArquivo(arqId) {
-            if(currentUserRole !== 'admin' && currentUserRole !== 'supervisor') {
-                return alert("Apenas Administradores ou Supervisores podem excluir arquivos/fotos!");
-            }
-            let clientes = JSON.parse(localStorage.getItem('db_clientes'));
-            let c = clientes.find(p => p.id === selectedPatientId);
-            c.arq = c.arq.filter(a => a.id !== arqId);
-            localStorage.setItem('db_clientes', JSON.stringify(clientes));
-            renderArquivos(c.arq);
-        }
-
-        // --- RETORNOS ---
         function renderRetornos() {
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
-            const agenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
-            
             const tbody = document.querySelector('#table-retornos tbody');
             if (tbody) {
-                tbody.innerHTML = clientes.map(c => {
-                    const cons = agenda.filter(a => a.paciente === c.nome);
-                    const last = c.ultConsulta || (cons.length ? cons[cons.length - 1].data : 'Sem histórico');
+                tbody.innerHTML = dbPatients.map(c => {
                     const cel = c.cel || c.tel || '';
-                    const msg = encodeURIComponent(`Olá ${c.nome}, aqui é da Odonto Pro! Gostaria de agendar seu retorno odontológico?`);
+                    const msg = encodeURIComponent(`Olá ${c.nome}, aqui é da Odonto Pro! Gostaria de agendar seu retorno?`);
                     return `
                         <tr>
-                            <td>${c.nome}</td><td>${cel}</td><td>${last}</td>
+                            <td>${c.nome}</td><td>${cel}</td><td>${c.ultConsulta || 'Sem histórico'}</td>
                             <td><a href="https://wa.me/55${cel.replace(/\D/g,'')}?text=${msg}" target="_blank" style="color:green; font-weight:bold;">Enviar WhatsApp</a></td>
                         </tr>
                     `;
@@ -1793,160 +1072,26 @@ ${c.nome.toUpperCase()} (CONTRATANTE)`;
             }
         }
 
-        // --- FINANCEIRO ---
-        function renderFinanceiro() {
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
-            let rec = 0, aRec = 0, inadVal = 0, inadQtd = 0;
+        function updateSelects() {
+            const dentistas = dbUsers.filter(u => u.role === 'dentista');
+            const filterDr = document.getElementById('filter-dr');
+            const aDr = document.getElementById('a-dr');
 
-            clientes.forEach(c => {
-                let pInad = false;
-                (c.pag || []).forEach(p => {
-                    const val = parseFloat(p.val) || 0;
-                    if(p.status === 'Recebido') rec += val;
-                    if(p.status === 'A Receber') {
-                        aRec += val;
-                        inadVal += val;
-                        pInad = true;
-                    }
-                });
-                if(pInad) inadQtd++;
-            });
-
-            document.getElementById('fin-ent-rec').innerText = rec.toFixed(2);
-            document.getElementById('fin-ent-arec').innerText = aRec.toFixed(2);
-            document.getElementById('fin-ent-tot').innerText = (rec + aRec).toFixed(2);
-            
-            document.getElementById('fin-res-rec').innerText = rec.toFixed(2);
-            document.getElementById('fin-res-arec').innerText = aRec.toFixed(2);
-            document.getElementById('fin-res-tot').innerText = (rec + aRec).toFixed(2);
-
-            document.getElementById('fin-inad-val').innerText = inadVal.toFixed(2);
-            document.getElementById('fin-inad-qtd').innerText = inadQtd;
-
-            renderFluxo();
-        }
-
-        function renderFluxo() {
-            const rec = parseFloat(document.getElementById('fin-ent-arec').innerText) || 0;
-            document.getElementById('flx-rec').innerText = rec.toFixed(2);
-            document.getElementById('flx-des').innerText = "0.00";
-            document.getElementById('flx-sal').innerText = rec.toFixed(2);
-        }
-
-        function showInadimplentesModal() {
-            const clientes = JSON.parse(localStorage.getItem('db_clientes')) || [];
-            let html = '';
-            clientes.forEach(c => {
-                let tot = 0;
-                (c.pag || []).forEach(p => { if(p.status === 'A Receber') tot += parseFloat(p.val); });
-                if(tot > 0) html += `<tr><td>${c.nome}</td><td>${tot.toFixed(2)}</td></tr>`;
-            });
-            document.querySelector('#table-modal-inad tbody').innerHTML = html;
-            document.getElementById('modal-inad').style.display = 'flex';
-        }
-
-        // --- USUÁRIOS ---
-        function createUser(e) {
-            e.preventDefault();
-            if (currentUserRole !== 'admin') {
-                alert("Apenas o Administrador pode cadastrar novos usuários!");
-                return;
-            }
-
-            const users = getOrCreateUsers();
-            
-            users.push({
-                id: Date.now(),
-                nomeCompleto: document.getElementById('new-nome-completo').value,
-                email: document.getElementById('new-email').value,
-                genero: document.getElementById('new-genero').value,
-                nasc: document.getElementById('new-nasc').value,
-                cel: document.getElementById('new-cel').value,
-                cpf: document.getElementById('new-cpf').value,
-                croUf: document.getElementById('new-cro-uf').value,
-                cro: document.getElementById('new-cro').value,
-                user: document.getElementById('new-user').value,
-                pass: document.getElementById('new-pass').value,
-                role: document.getElementById('new-role').value
-            });
-            
-            localStorage.setItem('users', JSON.stringify(users));
-            renderUsers();
-            updateSelects();
-            e.target.reset();
-            alert("Usuário cadastrado com sucesso!");
+            if (filterDr) filterDr.innerHTML = '<option value="todos">Todos Dr</option>' + dentistas.map(d => `<option value="${d.nomeCompleto}">${d.nomeCompleto}</option>`).join('');
+            if (aDr) aDr.innerHTML = '<option value="">Dr(a)...</option>' + dentistas.map(d => `<option value="${d.nomeCompleto}">${d.nomeCompleto}</option>`).join('');
         }
 
         function renderUsers() {
-            const cardCadastro = document.getElementById('card-cadastro-usuario');
-            if (cardCadastro) {
-                cardCadastro.style.display = (currentUserRole === 'admin') ? 'block' : 'none';
-            }
-
-            const users = getOrCreateUsers();
-            document.querySelector('#table-usuarios tbody').innerHTML = users.map(u => `
+            document.querySelector('#table-usuarios tbody').innerHTML = dbUsers.map(u => `
                 <tr>
                     <td>${u.nomeCompleto || '-'}</td>
                     <td>${u.email || '-'}</td>
-                    <td>${u.user}</td>
                     <td><b>${(u.role || 'dentista').toUpperCase()}</b></td>
                     <td>${u.cpf || '-'}</td>
-                    <td>${u.cro ? u.cro + '/' + (u.croUf || '') : '-'}</td>
+                    <td>${u.cro || '-'}</td>
                     <td>${u.cel || '-'}</td>
-                    <td>
-                        ${currentUserRole === 'admin' && u.user !== 'Mangas' ? `<button class="btn-delete" onclick="deleteUser(${u.id})">Excluir</button>` : '-'}
-                    </td>
                 </tr>
             `).join('');
-        }
-
-        function deleteUser(id) {
-            if (currentUserRole !== 'admin') {
-                return alert("Apenas o Administrador pode excluir usuários!");
-            }
-            if (confirm("Deseja realmente excluir este usuário?")) {
-                let users = getOrCreateUsers();
-                users = users.filter(u => u.id !== id);
-                localStorage.setItem('users', JSON.stringify(users));
-                renderUsers();
-                updateSelects();
-            }
-        }
-
-        function updateSelects() {
-            const users = getOrCreateUsers();
-            
-            // Filtra exclusivamente os usuários com a função 'dentista' (ocultando administrador e supervisor)
-            const dentistas = users.filter(u => u.role === 'dentista');
-            
-            // Mantém os demais perfis para a aba de evolução clínica quando necessário
-            const todosDrs = users.filter(u => u.role === 'dentista' || u.role === 'admin' || u.role === 'supervisor');
-
-            const filterDr = document.getElementById('filter-dr');
-            const aDr = document.getElementById('a-dr');
-            const evoDr = document.getElementById('evo-dr');
-
-            if (filterDr) {
-                filterDr.innerHTML = '<option value="todos">Todos Dr</option>' + dentistas.map(d => `<option value="${d.nomeCompleto || d.user}">${d.nomeCompleto || d.user}</option>`).join('');
-            }
-            if (aDr) {
-                aDr.innerHTML = '<option value="">Dr(a)...</option>' + dentistas.map(d => `<option value="${d.nomeCompleto || d.user}">${d.nomeCompleto || d.user}</option>`).join('');
-            }
-            if (evoDr) {
-                evoDr.innerHTML = '<option value="">Selecione o Doutor...</option>' + todosDrs.map(d => `<option value="${d.nomeCompleto || d.user}">${d.nomeCompleto || d.user}</option>`).join('');
-            }
-        }
-
-        function init() {
-            initPatientStorage();
-            getOrCreateUsers();
-            updateSelects();
-            renderCalendar();
-            renderListAgendamentos();
-            renderClientes();
-            renderFinanceiro();
-            renderUsers();
-            updateNextPatientNumberInput();
         }
     </script>
 </body>
