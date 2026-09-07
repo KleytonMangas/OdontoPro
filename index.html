@@ -10,7 +10,8 @@
     <!-- SDKs do Firebase (Modular v9/v10) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBLK-0j4_wD_oJh5mlIWZXcULjD9FNEvU0",
@@ -22,25 +23,23 @@
             appId: "1:898026785726:web:7de5d9b2da7da0b42747ef"
         };
 
+        // Inicializa o app e expõe as referências Globais necessárias
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getDatabase(app);
 
-        // Torna a função global para poder ser chamada no botão de login
-      window.realizarLogin = function() {
-  const email = document.getElementById('user').value.trim();
-  const pass = document.getElementById('pass').value.trim();
-
-  signInWithEmailAndPassword(auth, email, pass)
-    .then((userCredential) => {
-      alert("Login efetuado com sucesso!");
-      document.getElementById('login-section').style.display = 'none';
-      document.getElementById('main-system').style.display = 'flex';
-    })
-    .catch((error) => {
-      console.error("Erro Firebase:", error.code, error.message);
-      alert("Erro ao logar: " + error.code);
-    });
-};
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.fbSDK = {
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            ref,
+            set,
+            get,
+            child,
+            onValue
+        };
     </script>
 
     <style>
@@ -55,7 +54,6 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
         
-        /* Imagem de Fundo de Alta Resolução Ajustada para Web/GitHub */
         body { 
             min-height: 100vh; 
             background: #0b0b2b url('https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Azul.jpg') no-repeat center center fixed; 
@@ -65,11 +63,9 @@
             align-items: center; 
         }
 
-        /* Login */
         #login-section { width: 420px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); padding: 40px; border-radius: 15px; color: white; text-align: center; }
         #main-system { display: none; width: 98%; max-width: 1600px; height: 95vh; background: var(--bg); border-radius: 20px; overflow: hidden; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-        /* Navigation */
         .sidebar { background: var(--primary); display: flex; padding: 10px; gap: 8px; align-items: center; flex-wrap: wrap; }
         .tab-btn { padding: 8px 14px; color: white; cursor: pointer; border-radius: 8px; transition: 0.3s; display: flex; align-items: center; gap: 5px; font-size: 13px; }
         .tab-btn.active { background: white; color: var(--primary); font-weight: bold; }
@@ -728,7 +724,14 @@
             try {
                 await window.fbSDK.signInWithEmailAndPassword(window.firebaseAuth, email, pass);
             } catch (err) {
-                alert("Erro ao realizar login: " + err.message);
+                console.error("Erro na autenticação:", err);
+                if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                    alert("E-mail ou senha incorretos.");
+                } else if (err.code === 'auth/unauthorized-domain') {
+                    alert("Erro: O domínio do seu GitHub Pages precisa ser adicionado no console do Firebase (Authentication > Settings > Authorized Domains).");
+                } else {
+                    alert("Erro ao realizar login: " + err.message);
+                }
             }
         });
 
