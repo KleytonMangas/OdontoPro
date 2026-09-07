@@ -26,16 +26,21 @@
         const auth = getAuth(app);
 
         // Torna a função global para poder ser chamada no botão de login
-        window.realizarLogin = function(email, senha) {
-            signInWithEmailAndPassword(auth, email, senha)
-                .then((userCredential) => {
-                    alert("Login realizado com sucesso!");
-                    console.log("Usuário logado:", userCredential.user);
-                })
-                .catch((error) => {
-                    alert("Erro no login: " + error.message);
-                });
-        };
+      window.realizarLogin = function() {
+  const email = document.getElementById('user').value.trim();
+  const pass = document.getElementById('pass').value.trim();
+
+  signInWithEmailAndPassword(auth, email, pass)
+    .then((userCredential) => {
+      alert("Login efetuado com sucesso!");
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('main-system').style.display = 'flex';
+    })
+    .catch((error) => {
+      console.error("Erro Firebase:", error.code, error.message);
+      alert("Erro ao logar: " + error.code);
+    });
+};
     </script>
 
     <style>
