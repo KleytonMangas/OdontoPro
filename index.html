@@ -8,46 +8,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- SDKs do Firebase (Modular v9/v10) -->
-    <script type="module" src="seu-script.js">
-        // 1. Importações oficiais via CDN para uso direto no navegador
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// 2. Configurações do seu projeto Odonto Pro
-const firebaseConfig = {
-  apiKey: "AIzaSyBLK-0j4_wD_oJh5mlIWZXcULjD9FNEvU0",
-  authDomain: "odonto-pro-fbfbf.firebaseapp.com",
-  databaseURL: "https://odonto-pro-fbfbf-default-rtdb.firebaseio.com",
-  projectId: "odonto-pro-fbfbf",
-  storageBucket: "odonto-pro-fbfbf.firebasestorage.app",
-  messagingSenderId: "898026785726",
-  appId: "1:898026785726:web:7de5d9b2da7da0b42747ef",
-  measurementId: "G-SLQ8407524"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLK-0j4_wD_oJh5mlIWZXcULjD9FNEvU0",
+            authDomain: "odonto-pro-fbfbf.firebaseapp.com",
+            databaseURL: "https://odonto-pro-fbfbf-default-rtdb.firebaseio.com",
+            projectId: "odonto-pro-fbfbf",
+            storageBucket: "odonto-pro-fbfbf.firebasestorage.app",
+            messagingSenderId: "898026785726",
+            appId: "1:898026785726:web:7de5d9b2da7da0b42747ef"
+        };
 
-// 3. Inicialização dos serviços
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-// 4. Função de Login
-function realizarLogin(email, senha) {
-  signInWithEmailAndPassword(auth, email, senha)
-    .then((userCredential) => {
-      console.log("Login realizado com sucesso!", userCredential.user);
-      alert("Bem-vindo ao Odonto Pro!");
-      // Coloque aqui o redirecionamento, ex: window.location.href = "painel.html";
-    })
-    .catch((error) => {
-      console.error("Erro no login:", error.code, error.message);
-      alert("Falha ao autenticar: " + error.message);
-    });
-}
-
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-        window.fbSDK = { signInWithEmailAndPassword, signOut, onAuthStateChanged, ref, set, get, child, onValue };
+        // Torna a função global para poder ser chamada no botão de login
+        window.realizarLogin = function(email, senha) {
+            signInWithEmailAndPassword(auth, email, senha)
+                .then((userCredential) => {
+                    alert("Login realizado com sucesso!");
+                    console.log("Usuário logado:", userCredential.user);
+                })
+                .catch((error) => {
+                    alert("Erro no login: " + error.message);
+                });
+        };
     </script>
 
     <style>
