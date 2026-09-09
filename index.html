@@ -119,9 +119,8 @@
         .calendar-day { background: white; min-height: 90px; padding: 5px; border: 1px solid #eee; cursor: pointer; }
         .event-tag { background: #eef2ff; font-size: 10px; padding: 2px; border-left: 3px solid var(--primary); margin-top: 2px; }
 
-        .teeth-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; margin: 15px 0; text-align: center; }
-        .tooth-box { border: 1px solid #ccc; padding: 5px; border-radius: 4px; font-size: 11px; cursor: pointer; background: #fff; }
-        .tooth-box.marked { background: var(--danger); color: white; }
+        .odontograma-container { text-align: center; margin: 15px 0; }
+        .odontograma-img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e0e0e0; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 12px; padding: 20px; max-height: 85vh; overflow-y: auto; }
@@ -356,12 +355,16 @@
                                 <div class="card" style="grid-column: span 2;">
                                     <h4>Odontograma Resumido</h4>
                                     <div class="sub-nav">
-                                        <div class="sub-btn active" onclick="toggleTeethType('perm')">Permanentes</div>
-                                        <div class="sub-btn" onclick="toggleTeethType('dec')">Decíduos</div>
+                                        <div class="sub-btn active" onclick="toggleTeethType('perm', this)">Permanentes</div>
+                                        <div class="sub-btn" onclick="toggleTeethType('dec', this)">Decíduos</div>
                                     </div>
-                                    <div id="teeth-perm-view" class="teeth-grid"></div>
-                                    <div id="teeth-dec-view" class="teeth-grid" style="display:none"></div>
-                                    <textarea id="teeth-obs" placeholder="Observações das marcações nos dentes..." onchange="saveTeethObs()"></textarea>
+                                    <div id="teeth-perm-view" class="odontograma-container">
+                                        <img src="Permanente.jpg" alt="Odontograma Permanente" class="odontograma-img">
+                                    </div>
+                                    <div id="teeth-dec-view" class="odontograma-container" style="display:none">
+                                        <img src="Deciduos.jpg" alt="Odontograma Decíduos" class="odontograma-img">
+                                    </div>
+                                    <textarea id="teeth-obs" placeholder="Observações do odontograma..." onchange="saveTeethObs()"></textarea>
                                 </div>
                             </div>
                             <div class="card">
@@ -799,6 +802,20 @@
             btn.parentElement.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).style.display = 'block';
             btn.classList.add('active');
+        }
+
+        function toggleTeethType(type, btn) {
+            if (type === 'perm') {
+                document.getElementById('teeth-perm-view').style.display = 'block';
+                document.getElementById('teeth-dec-view').style.display = 'none';
+            } else {
+                document.getElementById('teeth-perm-view').style.display = 'none';
+                document.getElementById('teeth-dec-view').style.display = 'block';
+            }
+            if (btn) {
+                btn.parentElement.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
         }
 
         // --- CALENDÁRIO E AGENDAMENTOS ---
