@@ -124,6 +124,7 @@
         .event-tag { background: #eef2ff; font-size: 10px; padding: 2px; border-left: 3px solid var(--primary); margin-top: 2px; }
 
         .odontograma-container { text-align: center; margin: 15px 0; }
+        .odontograma-img { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
         .odontograma-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 15px 0; }
         .tooth-box { border: 1px solid #ccc; padding: 8px; border-radius: 6px; background: #fff; cursor: pointer; min-width: 45px; text-align: center; font-weight: bold; position: relative; }
         .tooth-box.selected { border: 2px solid var(--primary); }
@@ -384,8 +385,21 @@
                                         <button type="button" class="sub-btn" onclick="setToothStatus('')" style="background:#6c757d; color:white;">Limpar Marcador</button>
                                     </div>
 
-                                    <div id="teeth-perm-view" class="odontograma-grid"></div>
-                                    <div id="teeth-dec-view" class="odontograma-grid" style="display:none"></div>
+                                    <!-- VISUALIZAÇÃO DE IMAGENS E DENTES PERMANENTES -->
+                                    <div id="teeth-perm-wrapper">
+                                        <div style="text-align: center;">
+                                            <img src="https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Permanente.jpg" alt="Odontograma Permanente" class="odontograma-img">
+                                        </div>
+                                        <div id="teeth-perm-view" class="odontograma-grid"></div>
+                                    </div>
+
+                                    <!-- VISUALIZAÇÃO DE IMAGENS E DENTES DECÍDUOS -->
+                                    <div id="teeth-dec-wrapper" style="display:none">
+                                        <div style="text-align: center;">
+                                            <img src="https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Deciduos.jpg" alt="Odontograma Decíduo" class="odontograma-img">
+                                        </div>
+                                        <div id="teeth-dec-view" class="odontograma-grid"></div>
+                                    </div>
 
                                     <textarea id="teeth-obs" placeholder="Observações do odontograma..." onchange="saveTeethObs()"></textarea>
                                 </div>
@@ -907,11 +921,11 @@
 
         function toggleTeethType(type, btn) {
             if (type === 'perm') {
-                document.getElementById('teeth-perm-view').style.display = 'flex';
-                document.getElementById('teeth-dec-view').style.display = 'none';
+                document.getElementById('teeth-perm-wrapper').style.display = 'block';
+                document.getElementById('teeth-dec-wrapper').style.display = 'none';
             } else {
-                document.getElementById('teeth-perm-view').style.display = 'none';
-                document.getElementById('teeth-dec-view').style.display = 'flex';
+                document.getElementById('teeth-perm-wrapper').style.display = 'none';
+                document.getElementById('teeth-dec-wrapper').style.display = 'block';
             }
             if (btn) {
                 btn.parentElement.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
