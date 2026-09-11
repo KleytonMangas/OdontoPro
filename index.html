@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, get, child, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, child, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBLK-0j4_wD_oJh5mlIWZXcULjD9FNEvU0",
@@ -23,12 +23,10 @@
             appId: "1:898026785726:web:7de5d9b2da7da0b42747ef"
         };
 
-        // Inicializa o app principal
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Expõe as referências globais necessárias
         window.firebaseApp = app;
         window.firebaseConfig = firebaseConfig;
         window.firebaseAuth = auth;
@@ -43,7 +41,8 @@
             get,
             child,
             onValue,
-            remove
+            remove,
+            push
         };
     </script>
 
@@ -125,7 +124,13 @@
         .event-tag { background: #eef2ff; font-size: 10px; padding: 2px; border-left: 3px solid var(--primary); margin-top: 2px; }
 
         .odontograma-container { text-align: center; margin: 15px 0; }
-        .odontograma-img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .odontograma-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 15px 0; }
+        .tooth-box { border: 1px solid #ccc; padding: 8px; border-radius: 6px; background: #fff; cursor: pointer; min-width: 45px; text-align: center; font-weight: bold; position: relative; }
+        .tooth-box.selected { border: 2px solid var(--primary); }
+        .tooth-box .status-badge { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; color: white; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .status-X { background: var(--danger); }
+        .status-V { background: var(--success); }
+        .status-P { background: var(--warning); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 12px; padding: 20px; max-height: 85vh; overflow-y: auto; }
@@ -137,6 +142,7 @@
         .fin-orange { background: #ef6c00; }
         
         .task-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+        .img-preview { max-width: 100px; max-height: 100px; border-radius: 6px; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -349,26 +355,38 @@
                             <div class="sub-btn" onclick="openPacSub('p-arq', this)">Arquivos / Fotos</div>
                         </div>
 
+                        <!-- ABA VISÃO GERAL -->
                         <div id="p-vis" class="pac-tab">
                             <div class="grid-4">
                                 <div class="card">
                                     <h4>Criar Tarefa / Lembrete</h4>
-                                    <input type="text" id="task-text" placeholder="Descrição da tarefa...">
-                                    <button class="save-btn" onclick="addTask()" style="margin-top:5px">Adicionar</button>
+                                    <form onsubmit="addTask(event)">
+                                        <input type="text" id="task-text" placeholder="Descrição da tarefa..." required>
+                                        <button type="submit" class="save-btn" style="margin-top:5px">Adicionar</button>
+                                    </form>
                                     <ul id="task-list" style="margin-top:10px; list-style:none;"></ul>
                                 </div>
-                                <div class="card" style="grid-column: span 2;">
-                                    <h4>Odontograma Resumido</h4>
+                                
+                                <div class="card" style="grid-column: span 3;">
+                                    <h4>Odontograma Resumido Interactive</h4>
+                                    <p style="font-size:12px; color:#555; margin-bottom:10px;">Clique em um dente para selecionar/marcar o status:</p>
+                                    
                                     <div class="sub-nav">
                                         <div class="sub-btn active" onclick="toggleTeethType('perm', this)">Permanentes</div>
                                         <div class="sub-btn" onclick="toggleTeethType('dec', this)">Decíduos</div>
                                     </div>
-                                    <div id="teeth-perm-view" class="odontograma-container">
-                                        <img src="https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Permanente.jpg" alt="Odontograma Permanente" class="odontograma-img">
+
+                                    <div style="margin-bottom: 10px; display:flex; gap:10px; align-items:center;">
+                                        <span>Status Selecionado: </span>
+                                        <button type="button" class="sub-btn" onclick="setToothStatus('X')" style="background:var(--danger); color:white;">❌ Removido (X)</button>
+                                        <button type="button" class="sub-btn" onclick="setToothStatus('V')" style="background:var(--success); color:white;">🟩 Bom/Feito (V)</button>
+                                        <button type="button" class="sub-btn" onclick="setToothStatus('P')" style="background:var(--warning); color:white;">🟨 Procedimento (P)</button>
+                                        <button type="button" class="sub-btn" onclick="setToothStatus('')" style="background:#6c757d; color:white;">Limpar Marcador</button>
                                     </div>
-                                    <div id="teeth-dec-view" class="odontograma-container" style="display:none">
-                                        <img src="https://raw.githubusercontent.com/KleytonMangas/OdontoPro/main/Deciduos.jpg" alt="Odontograma Decíduos" class="odontograma-img">
-                                    </div>
+
+                                    <div id="teeth-perm-view" class="odontograma-grid"></div>
+                                    <div id="teeth-dec-view" class="odontograma-grid" style="display:none"></div>
+
                                     <textarea id="teeth-obs" placeholder="Observações do odontograma..." onchange="saveTeethObs()"></textarea>
                                 </div>
                             </div>
@@ -381,11 +399,14 @@
                             </div>
                         </div>
 
+                        <!-- ABA ANAMNESES -->
                         <div id="p-ana" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Novo Relatório de Anamnese</h4>
-                                <textarea id="ana-text" rows="6" placeholder="Preencha o histórico de saúde, alergias, medicações do paciente..."></textarea>
-                                <button class="save-btn" onclick="saveAna()" style="margin-top:10px;">Salvar Relatório</button>
+                                <form onsubmit="saveAna(event)">
+                                    <textarea id="ana-text" rows="6" placeholder="Preencha o histórico de saúde, alergias, medicações do paciente..." required></textarea>
+                                    <button type="submit" class="save-btn" style="margin-top:10px;">Salvar Relatório</button>
+                                </form>
                             </div>
                             <div class="card">
                                 <h4>Histórico de Relatórios de Anamnese</h4>
@@ -402,6 +423,7 @@
                             </div>
                         </div>
 
+                        <!-- ABA ORÇAMENTOS -->
                         <div id="p-orc" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Novo Orçamento</h4>
@@ -414,18 +436,21 @@
                             <div class="card">
                                 <h4>Itens do Orçamento</h4>
                                 <table id="table-orcamentos">
-                                    <thead><tr><th>Descrição</th><th>Valor (R$)</th></tr></thead>
+                                    <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Ações</th></tr></thead>
                                     <tbody></tbody>
                                 </table>
                             </div>
                         </div>
 
+                        <!-- ABA TRATAMENTOS -->
                         <div id="p-tra" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Tratamentos e Odontograma</h4>
-                                <p style="font-size:12px; color:#666;">Selecione os dentes afetados e adicione ao relatório de tratamentos.</p>
-                                <textarea id="tra-obs" rows="3" placeholder="Observações do tratamento nos dentes..."></textarea>
-                                <button class="save-btn" onclick="addTratamentoReport()">Adicionar Tratamento ao Relatório</button>
+                                <form onsubmit="addTratamentoReport(event)">
+                                    <p style="font-size:12px; color:#666;">Dentes marcados no odontograma serão inclusos neste registro.</p>
+                                    <textarea id="tra-obs" rows="3" placeholder="Observações do tratamento nos dentes..." required></textarea>
+                                    <button type="submit" class="save-btn" style="margin-top:10px;">Adicionar Tratamento ao Relatório</button>
+                                </form>
                             </div>
                             <div class="card">
                                 <h4>Histórico de Tratamentos Adicionados</h4>
@@ -443,6 +468,7 @@
                             </div>
                         </div>
 
+                        <!-- ABA PAGAMENTOS -->
                         <div id="p-pag" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Registrar Pagamento do Paciente</h4>
@@ -471,16 +497,19 @@
                             </div>
                         </div>
 
+                        <!-- ABA EVOLUÇÃO -->
                         <div id="p-evo" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Nova Evolução Clínica</h4>
-                                <div class="grid-form" style="margin-bottom:10px;">
-                                    <select id="evo-dr"><option value="">Selecione o Doutor...</option></select>
-                                    <input type="date" id="evo-data" required>
-                                </div>
-                                <textarea id="evo-texto" rows="5" placeholder="Descreva a evolução do tratamento..."></textarea>
-                                <input type="file" id="evo-img" accept="image/*" style="margin-top:10px;">
-                                <button class="save-btn" onclick="saveEvolucao()" style="margin-top:10px;">Salvar Evolução</button>
+                                <form onsubmit="saveEvolucao(event)">
+                                    <div class="grid-form" style="margin-bottom:10px;">
+                                        <select id="evo-dr" required><option value="">Selecione o Doutor...</option></select>
+                                        <input type="date" id="evo-data" required>
+                                    </div>
+                                    <textarea id="evo-texto" rows="5" placeholder="Descreva a evolução do tratamento..." required></textarea>
+                                    <input type="file" id="evo-img" accept="image/*" style="margin-top:10px;">
+                                    <button type="submit" class="save-btn" style="margin-top:10px;">Salvar Evolução</button>
+                                </form>
                             </div>
                             <div class="card">
                                 <h4>Histórico de Evolução Clínica</h4>
@@ -500,19 +529,21 @@
                             </div>
                         </div>
 
+                        <!-- ABA DOCUMENTOS -->
                         <div id="p-doc" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Emissão de Documentos</h4>
                                 <div class="grid-form">
-                                    <button class="save-btn" style="background:var(--primary);" onclick="generateDoc('atestado')">Emitir Atestado</button>
-                                    <button class="save-btn" style="background:var(--secondary);" onclick="generateDoc('prescricao')">Emitir Receituário</button>
-                                    <button class="save-btn" style="background:var(--warning);" onclick="generateDoc('contrato')">Emitir Contrato</button>
+                                    <button type="button" class="save-btn" style="background:var(--primary);" onclick="generateDoc('atestado')">Emitir Atestado</button>
+                                    <button type="button" class="save-btn" style="background:var(--secondary);" onclick="generateDoc('prescricao')">Emitir Receituário</button>
+                                    <button type="button" class="save-btn" style="background:var(--warning);" onclick="generateDoc('contrato')">Emitir Contrato</button>
                                 </div>
                                 <textarea id="doc-preview" rows="18" style="margin-top:15px; font-family: monospace; font-size: 13px;" placeholder="Modelo do documento gerado aparecerá aqui para edição/impressão..."></textarea>
-                                <button class="save-btn" style="background:var(--success); margin-top:10px;" onclick="printDocPDF()">Imprimir em PDF</button>
+                                <button type="button" class="save-btn" style="background:var(--success); margin-top:10px;" onclick="printDocPDF()">Imprimir em PDF</button>
                             </div>
                         </div>
 
+                        <!-- ABA ARQUIVOS / FOTOS -->
                         <div id="p-arq" class="pac-tab" style="display:none">
                             <div class="card">
                                 <h4>Upload de Arquivos e Raio-X</h4>
@@ -703,7 +734,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Função global para cadastrar novos usuários sem deslogar o admin atual
         window.createUser = async function(e) {
             e.preventDefault();
 
@@ -719,18 +749,14 @@
             const role = document.getElementById('new-role').value;
 
             try {
-                // Instancia um App Firebase secundário para criar a conta sem afetar a sessão ativa
                 const secondaryApp = initializeApp(window.firebaseConfig, "SecondaryApp_" + Date.now());
                 const secondaryAuth = getAuth(secondaryApp);
 
-                // 1. Cria a conta de autenticação no Firebase Auth
                 const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, senha);
                 const newUid = userCredential.user.uid;
 
-                // Desloga imediatamente do app secundário
                 await signOut(secondaryAuth);
 
-                // 2. Salva o perfil completo do usuário no Realtime Database usando a sessão principal
                 await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `users/${newUid}`), {
                     uid: newUid,
                     nomeCompleto: nome,
@@ -753,7 +779,6 @@
             }
         };
 
-        // Função global para excluir usuário
         window.deleteUser = async function(uid, nome) {
             if (currentUserRole !== 'admin') {
                 return alert("Apenas Administradores podem excluir cadastros de usuários.");
@@ -777,8 +802,12 @@
         let dbPatients = [];
         let dbAgenda = [];
         let dbUsers = [];
+        let activeStatus = 'X';
+        let teethData = {};
 
-        // --- INTEGRAÇÃO E AUTENTICAÇÃO FIREBASE ---
+        const teethPerm = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28, 48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
+        const teethDec = [55,54,53,52,51, 61,62,63,64,65, 85,84,83,82,81, 71,72,73,74,75];
+
         window.addEventListener('load', () => {
             const checkFirebase = setInterval(() => {
                 if (window.firebaseAuth && window.fbSDK) {
@@ -808,13 +837,7 @@
                 await window.fbSDK.signInWithEmailAndPassword(window.firebaseAuth, email, pass);
             } catch (err) {
                 console.error("Erro na autenticação:", err);
-                if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-                    alert("E-mail ou senha incorretos.");
-                } else if (err.code === 'auth/unauthorized-domain') {
-                    alert("Erro: O domínio do seu GitHub Pages precisa ser adicionado no console do Firebase (Authentication > Settings > Authorized Domains).");
-                } else {
-                    alert("Erro ao realizar login: " + err.message);
-                }
+                alert("Erro ao realizar login: " + err.message);
             }
         });
 
@@ -825,26 +848,26 @@
         async function loadUserData(uid) {
             const dbRef = window.fbSDK.ref(window.firebaseDb);
             
-            // Buscar Perfil do Usuário
             const userSnap = await window.fbSDK.get(window.fbSDK.child(dbRef, `users/${uid}`));
             if (userSnap.exists()) {
                 currentLoggedUser = userSnap.val();
                 currentUserRole = currentLoggedUser.role || 'dentista';
                 document.getElementById('logged-username').innerText = `${currentLoggedUser.nomeCompleto || currentLoggedUser.email} (${currentUserRole.toUpperCase()})`;
+            } else {
+                document.getElementById('logged-username').innerText = window.firebaseAuth.currentUser.email;
             }
 
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('main-system').style.display = 'flex';
 
-            // Observar Pacientes em Tempo Real
             window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'pacientes'), (snapshot) => {
                 const data = snapshot.val();
                 dbPatients = data ? Object.values(data) : [];
                 renderClientes();
                 updateNextPatientNumberInput();
+                if(selectedPatientId) loadPatientSubData(selectedPatientId);
             });
 
-            // Observar Agenda em Tempo Real
             window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'agenda'), (snapshot) => {
                 const data = snapshot.val();
                 dbAgenda = data ? Object.values(data) : [];
@@ -852,7 +875,6 @@
                 renderListAgendamentos();
             });
 
-            // Observar Usuários em Tempo Real
             window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'users'), (snapshot) => {
                 const data = snapshot.val();
                 dbUsers = data ? Object.entries(data).map(([key, val]) => ({ ...val, uid: key })) : [];
@@ -861,12 +883,11 @@
             });
         }
 
-        // --- NAVEGAÇÃO DE ABAS ---
         function openTab(id) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.sidebar .tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if(event && event.currentTarget) event.currentTarget.classList.add('active');
         }
 
         function openSubTab(id, btn) {
@@ -886,11 +907,11 @@
 
         function toggleTeethType(type, btn) {
             if (type === 'perm') {
-                document.getElementById('teeth-perm-view').style.display = 'block';
+                document.getElementById('teeth-perm-view').style.display = 'flex';
                 document.getElementById('teeth-dec-view').style.display = 'none';
             } else {
                 document.getElementById('teeth-perm-view').style.display = 'none';
-                document.getElementById('teeth-dec-view').style.display = 'block';
+                document.getElementById('teeth-dec-view').style.display = 'flex';
             }
             if (btn) {
                 btn.parentElement.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
@@ -898,7 +919,6 @@
             }
         }
 
-        // --- CALENDÁRIO E AGENDAMENTOS ---
         function changeMonth(dir) { currentMonth.setMonth(currentMonth.getMonth() + dir); renderCalendar(); }
 
         function renderCalendar() {
@@ -908,7 +928,6 @@
             let agenda = dbAgenda;
             
             if(drFilter !== 'todos') agenda = agenda.filter(a => a.dr === drFilter);
-            
             grid.innerHTML = '';
             
             const fullWeekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -1017,6 +1036,7 @@
             e.target.reset();
             document.getElementById('a-paciente-search').value = '';
             document.getElementById('a-paciente').value = '';
+            alert("Agendamento realizado com sucesso!");
         }
 
         function renderListAgendamentos() {
@@ -1044,11 +1064,10 @@
         async function cancelAgenda(id) {
             if(currentUserRole !== 'admin' && currentUserRole !== 'supervisor') return alert("Sem permissão!");
             if(confirm("Confirmar exclusão?")) {
-                await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `agenda/${id}`), null);
+                await window.fbSDK.remove(window.fbSDK.ref(window.firebaseDb, `agenda/${id}`));
             }
         }
 
-        // --- PACIENTES ---
         function getNextPatientNumber() {
             let maxNum = 0;
             dbPatients.forEach(c => {
@@ -1102,11 +1121,11 @@
 
             await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `pacientes/${id}`), newPatient);
             e.target.reset();
-            alert("Paciente cadastrado com sucesso no Firebase!");
+            alert("Paciente cadastrado com sucesso!");
         }
 
         function renderClientes() {
-            const query = document.getElementById('search-cli').value.toLowerCase();
+            const query = document.getElementById('search-cli') ? document.getElementById('search-cli').value.toLowerCase() : '';
             const filtered = dbPatients.filter(c => 
                 (c.nome && c.nome.toLowerCase().includes(query)) || 
                 (c.cpf && c.cpf.includes(query)) ||
@@ -1140,7 +1159,6 @@
             
             document.getElementById('summary-nome').innerText = c.nome || 'Paciente sem Nome';
             document.getElementById('summary-cel').innerText = `📱 Celular / WhatsApp: ${c.cel || c.tel || 'Não informado'}`;
-            
             document.getElementById('patient-info-container').style.display = 'none';
 
             const infoBox = document.getElementById('patient-info-display');
@@ -1154,6 +1172,282 @@
                 <div class="detail-item"><strong>Plano de Saúde:</strong> ${c.plano || '-'}</div>
                 <div class="detail-item" style="grid-column: 1 / -1;"><strong>Observações:</strong> ${c.obs || '-'}</div>
             `;
+
+            loadPatientSubData(id);
+        }
+
+        function loadPatientSubData(id) {
+            const p = dbPatients.find(p => String(p.id) === String(id));
+            if (!p) return;
+
+            // Tarefas
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = p.tasks ? Object.entries(p.tasks).map(([k, v]) => `
+                <li class="task-item">
+                    <span>${v.text}</span>
+                    <button class="btn-delete" onclick="removeTask('${k}')">x</button>
+                </li>
+            `).join('') : '<li>Nenhuma tarefa adicionada</li>';
+
+            // Odontograma
+            teethData = p.teethData || {};
+            document.getElementById('teeth-obs').value = p.teethObs || '';
+            renderInteractiveTeeth();
+
+            // Consultas
+            const histCons = dbAgenda.filter(a => a.paciente === p.nome);
+            document.querySelector('#table-hist-consultas tbody').innerHTML = histCons.map(a => `
+                <tr><td>${a.data} ${a.hora}</td><td>${a.dr}</td><td>${a.proc}</td><td><button class="btn-delete" onclick="cancelAgenda('${a.id}')">Excluir</button></td></tr>
+            `).join('');
+
+            // Anamneses
+            document.querySelector('#table-ana-historico tbody').innerHTML = p.anamneses ? Object.entries(p.anamneses).map(([k, v]) => `
+                <tr>
+                    <td>${v.date}</td>
+                    <td>${v.text.substring(0, 50)}...</td>
+                    <td>
+                        <button class="btn-view" onclick="viewAnaModal('${k}')">Ver</button>
+                        <button class="btn-delete" onclick="deleteSubItem('anamneses', '${k}')">Excluir</button>
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="3">Nenhum relatório salvo</td></tr>';
+
+            // Orçamentos
+            document.querySelector('#table-orcamentos tbody').innerHTML = p.orcamentos ? Object.entries(p.orcamentos).map(([k, v]) => `
+                <tr>
+                    <td>${v.desc}</td>
+                    <td>R$ ${parseFloat(v.val).toFixed(2)}</td>
+                    <td><button class="btn-delete" onclick="deleteSubItem('orcamentos', '${k}')">Excluir</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="3">Nenhum item salvo</td></tr>';
+
+            // Tratamentos
+            document.querySelector('#table-tratamentos-historico tbody').innerHTML = p.tratamentos ? Object.entries(p.tratamentos).map(([k, v]) => `
+                <tr>
+                    <td>${v.date}</td>
+                    <td>${v.teeth || '-'}</td>
+                    <td>${v.obs}</td>
+                    <td><button class="btn-delete" onclick="deleteSubItem('tratamentos', '${k}')">Excluir</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="4">Nenhum tratamento salvo</td></tr>';
+
+            // Pagamentos
+            document.querySelector('#table-pag-paciente tbody').innerHTML = p.pagamentos ? Object.entries(p.pagamentos).map(([k, v]) => `
+                <tr>
+                    <td>${v.date}</td>
+                    <td>${v.forma}</td>
+                    <td>${v.status}</td>
+                    <td>R$ ${parseFloat(v.val).toFixed(2)}</td>
+                    <td><button class="btn-delete" onclick="deleteSubItem('pagamentos', '${k}')">Excluir</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="5">Nenhum pagamento registrado</td></tr>';
+
+            // Evoluções
+            document.querySelector('#table-evo-historico tbody').innerHTML = p.evolucoes ? Object.entries(p.evolucoes).map(([k, v]) => `
+                <tr>
+                    <td>${v.createdAt}</td>
+                    <td>${v.date}</td>
+                    <td>${v.dr}</td>
+                    <td>${v.texto}</td>
+                    <td>${v.img ? `<img src="${v.img}" class="img-preview">` : '-'}</td>
+                    <td><button class="btn-delete" onclick="deleteSubItem('evolucoes', '${k}')">Excluir</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="6">Nenhuma evolução registrada</td></tr>';
+
+            // Arquivos
+            document.getElementById('arq-gallery').innerHTML = p.arquivos ? Object.entries(p.arquivos).map(([k, v]) => `
+                <div style="text-align:center; position:relative;">
+                    <img src="${v.url}" class="img-preview" style="width:120px; height:120px;">
+                    <button class="btn-delete" onclick="deleteSubItem('arquivos', '${k}')" style="position:absolute; top:0; right:0;">X</button>
+                </div>
+            `).join('') : '<p>Nenhum arquivo enviado</p>';
+        }
+
+        // --- SUB-AÇÕES DE PACIENTES COM FIREBASE ---
+        async function addTask(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const text = document.getElementById('task-text').value.trim();
+            if(!text) return;
+
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/tasks`));
+            await window.fbSDK.set(newRef, { text, createdAt: new Date().toISOString() });
+            document.getElementById('task-text').value = '';
+        }
+
+        async function removeTask(taskId) {
+            await window.fbSDK.remove(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/tasks/${taskId}`));
+        }
+
+        function setToothStatus(status) { activeStatus = status; }
+
+        function renderInteractiveTeeth() {
+            const permContainer = document.getElementById('teeth-perm-view');
+            const decContainer = document.getElementById('teeth-dec-view');
+
+            permContainer.innerHTML = teethPerm.map(t => {
+                const st = teethData[t] || '';
+                return `<div class="tooth-box" onclick="toggleTooth(${t})">
+                    ${t}
+                    ${st ? `<div class="status-badge status-${st}">${st}</div>` : ''}
+                </div>`;
+            }).join('');
+
+            decContainer.innerHTML = teethDec.map(t => {
+                const st = teethData[t] || '';
+                return `<div class="tooth-box" onclick="toggleTooth(${t})">
+                    ${t}
+                    ${st ? `<div class="status-badge status-${st}">${st}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        async function toggleTooth(toothNum) {
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            teethData[toothNum] = activeStatus;
+            await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/teethData`), teethData);
+            renderInteractiveTeeth();
+        }
+
+        async function saveTeethObs() {
+            if(!selectedPatientId) return;
+            const obs = document.getElementById('teeth-obs').value;
+            await window.fbSDK.set(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/teethObs`), obs);
+        }
+
+        async function saveAna(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const text = document.getElementById('ana-text').value.trim();
+            
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/anamneses`));
+            await window.fbSDK.set(newRef, { text, date: new Date().toLocaleString('pt-BR') });
+            document.getElementById('ana-text').value = '';
+            alert("Anamnese salva!");
+        }
+
+        async function saveOrcamento(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const desc = document.getElementById('orc-desc').value.trim();
+            const val = document.getElementById('orc-val').value;
+
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/orcamentos`));
+            await window.fbSDK.set(newRef, { desc, val, date: new Date().toLocaleString('pt-BR') });
+            document.getElementById('orc-desc').value = '';
+            document.getElementById('orc-val').value = '';
+            alert("Item adicionado ao orçamento!");
+        }
+
+        async function addTratamentoReport(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const obs = document.getElementById('tra-obs').value.trim();
+            const markedTeeth = Object.entries(teethData).filter(([k, v]) => v).map(([k, v]) => `${k}(${v})`).join(', ');
+
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/tratamentos`));
+            await window.fbSDK.set(newRef, { obs, teeth: markedTeeth, date: new Date().toLocaleString('pt-BR') });
+            document.getElementById('tra-obs').value = '';
+            alert("Tratamento registrado!");
+        }
+
+        async function savePatientPayment(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const val = document.getElementById('pag-val').value;
+            const forma = document.getElementById('pag-forma').value;
+            const status = document.getElementById('pag-status').value;
+
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/pagamentos`));
+            await window.fbSDK.set(newRef, { val, forma, status, date: new Date().toLocaleDateString('pt-BR') });
+            document.getElementById('pag-val').value = '';
+            alert("Pagamento registrado!");
+        }
+
+        async function saveEvolucao(e) {
+            e.preventDefault();
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const dr = document.getElementById('evo-dr').value;
+            const date = document.getElementById('evo-data').value;
+            const texto = document.getElementById('evo-texto').value;
+            const fileInput = document.getElementById('evo-img');
+
+            let imgBase64 = "";
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    imgBase64 = evt.target.result;
+                    await finishEvolucaoSave(dr, date, texto, imgBase64);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                await finishEvolucaoSave(dr, date, texto, "");
+            }
+        }
+
+        async function finishEvolucaoSave(dr, date, texto, img) {
+            const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/evolucoes`));
+            await window.fbSDK.set(newRef, { dr, date, texto, img, createdAt: new Date().toLocaleString('pt-BR') });
+            document.getElementById('evo-texto').value = '';
+            document.getElementById('evo-img').value = '';
+            alert("Evolução registrada!");
+        }
+
+        async function uploadArquivos(e) {
+            if(!selectedPatientId) return alert("Selecione um paciente!");
+            const files = e.target.files;
+            if(!files.length) return;
+
+            for(let file of files) {
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    const newRef = window.fbSDK.push(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/arquivos`));
+                    await window.fbSDK.set(newRef, { url: evt.target.result, name: file.name, date: new Date().toLocaleString('pt-BR') });
+                }
+                reader.readAsDataURL(file);
+            }
+            alert("Upload concluído!");
+        }
+
+        async function deleteSubItem(path, key) {
+            if(confirm("Confirmar exclusão deste item?")) {
+                await window.fbSDK.remove(window.fbSDK.ref(window.firebaseDb, `pacientes/${selectedPatientId}/${path}/${key}`));
+            }
+        }
+
+        function viewAnaModal(key) {
+            const p = dbPatients.find(p => String(p.id) === String(selectedPatientId));
+            if(!p || !p.anamneses || !p.anamneses[key]) return;
+            const item = p.anamneses[key];
+            document.getElementById('ana-modal-date').innerText = item.date;
+            document.getElementById('ana-modal-body').innerText = item.text;
+            document.getElementById('modal-ana-view').style.display = 'flex';
+        }
+
+        function generateDoc(type) {
+            const p = dbPatients.find(p => String(p.id) === String(selectedPatientId));
+            if(!p) return alert("Selecione um paciente em 'Busca Paciente' primeiro!");
+
+            const docBox = document.getElementById('doc-preview');
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            const drNome = currentLoggedUser ? currentLoggedUser.nomeCompleto : 'Dr. Dentista';
+
+            if(type === 'atestado') {
+                docBox.value = `ATESTADO MÉDICO / ODONTOLÓGICO\n\nAtesto para os devidos fins que o(a) paciente ${p.nome}, portador(a) do CPF nº ${p.cpf || '____'}, esteve sob meus cuidados profissionais na data de hoje (${dataHoje}), necessitando de repouso por ____ dias.\n\n\n_________________________________________\n${drNome}\nCirurgião Dentista`;
+            } else if(type === 'prescricao') {
+                docBox.value = `RECEITUÁRIO ODONTOLÓGICO\n\nPaciente: ${p.nome}\nData: ${dataHoje}\n\n1. Amoxicilina 500mg ----------------- 1 caixa\n   Tomar 1 comprimido de 8 em 8 horas por 7 dias.\n\n2. Dipirona 500mg --------------------- 1 caixa\n   Tomar 1 comprimido de 6 em 6 horas em caso de dor.\n\n\n_________________________________________\n${drNome}\nCirurgião Dentista`;
+            } else if(type === 'contrato') {
+                docBox.value = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS ODONTOLÓGICOS\n\nCONTRATANTE: ${p.nome}, CPF: ${p.cpf || '____'}, Residente em: ${p.end || '____'}.\nCONTRATADO: Clinica Odonto Pro.\n\nCláusula 1ª - O contratado se compromete a realizar os tratamentos odontológicos propostos no plano de tratamento aprovado pelo paciente.\n\nMacapá, ${dataHoje}.\n\n_____________________          _____________________\nContratante                    ${drNome}`;
+            }
+        }
+
+        function printDocPDF() {
+            const content = document.getElementById('doc-preview').value;
+            if(!content.trim()) return alert("Gere ou digite um documento primeiro.");
+            const win = window.open('', '', 'height=700,width=800');
+            win.document.write('<pre style="font-family: Poppins, sans-serif; font-size: 14px; padding: 40px; white-space: pre-wrap;">' + content + '</pre>');
+            win.document.close();
+            win.print();
         }
 
         function toggleDadosCadastrais() {
@@ -1183,12 +1477,16 @@
         }
 
         function updateSelects() {
-            const dentistas = dbUsers.filter(u => u.role === 'dentista');
+            const dentistas = dbUsers.filter(u => u.role === 'dentista' || u.role === 'admin');
             const filterDr = document.getElementById('filter-dr');
             const aDr = document.getElementById('a-dr');
+            const evoDr = document.getElementById('evo-dr');
 
-            if (filterDr) filterDr.innerHTML = '<option value="todos">Todos Dr</option>' + dentistas.map(d => `<option value="${d.nomeCompleto}">${d.nomeCompleto}</option>`).join('');
-            if (aDr) aDr.innerHTML = '<option value="">Dr(a)...</option>' + dentistas.map(d => `<option value="${d.nomeCompleto}">${d.nomeCompleto}</option>`).join('');
+            const optionsHtml = dentistas.map(d => `<option value="${d.nomeCompleto}">${d.nomeCompleto}</option>`).join('');
+
+            if (filterDr) filterDr.innerHTML = '<option value="todos">Todos Dr</option>' + optionsHtml;
+            if (aDr) aDr.innerHTML = '<option value="">Dr(a)...</option>' + optionsHtml;
+            if (evoDr) evoDr.innerHTML = '<option value="">Selecione o Doutor...</option>' + optionsHtml;
         }
 
         function renderUsers() {
