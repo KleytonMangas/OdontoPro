@@ -880,6 +880,7 @@
                 renderClientes();
                 updateNextPatientNumberInput();
                 if(selectedPatientId) loadPatientSubData(selectedPatientId);
+                calculateFinancials();
             });
 
             window.fbSDK.onValue(window.fbSDK.ref(window.firebaseDb, 'agenda'), (snapshot) => {
@@ -1275,6 +1276,98 @@
                     <button class="btn-delete" onclick="deleteSubItem('arquivos', '${k}')" style="position:absolute; top:0; right:0;">X</button>
                 </div>
             `).join('') : '<p>Nenhum arquivo enviado</p>';
+        }
+
+        // --- LÓGICA DE INTEGRAÇÃO DOS PAGAMENTOS COM FINANCEIRO E FLUXO DE CAIXA ---
+        let listInadimplentes = [];
+
+        function calculateFinancials() {
+            let totalRecebido = 0;
+            let totalAReceber = 0;
+            listInadimplentes = [];
+
+            dbPatients.forEach(p => {
+                if (p.pagamentos) {
+                    let pendentePaciente = 0;
+                    Object.values(p.pagamentos).forEach(pag => {
+                        const val = parseFloat(pag.val) || 0;
+                        if (pag.status === 'Recebido') {
+                            totalRecebido += val;
+                        } else if (pag.status === 'A Receber') {
+                            totalAReceber += val;
+                            pendentePaciente += val;
+                        }
+                    });
+
+                    if (pendentePaciente > 0) {
+                        listInadimplentes.push({
+                            nome: p.nome || 'Sem Nome',
+                            valor: pendentePaciente
+                        });
+                    }
+                }
+            });
+
+            // Atualiza Visão Geral do Financeiro
+            document.getElementById('fin-ent-rec').innerText = totalRecebido.toFixed(2).replace('.', ',');
+            document.getElementById('fin-ent-arec').innerText = totalAReceber.toFixed(2).replace('.', ',');
+            document.getElementById('fin-ent-tot').innerText = (totalRecebido + totalAReceber).toFixed(2).replace('.', ',');
+
+            document.getElementById('fin-res-rec').innerText = totalRecebido.toFixed(2).replace('.', ',');
+            document.getElementById('fin-res-arec').innerText = totalAReceber.toFixed(2).replace('.', ',');
+            document.getElementById('fin-res-tot').innerText = (totalRecebido + totalAReceber).toFixed(2).replace('.', ',');
+
+            // Atualiza Card de Inadimplentes
+            document.getElementById('fin-inad-val').innerText = totalAReceber.toFixed(2).replace('.', ',');
+            document.getElementById('fin-inad-qtd').innerText = listInadimplentes.length;
+
+            renderFluxo();
+        }
+
+        function renderFluxo() {
+            const inicio = document.getElementById('fluxo-inicio').value;
+            const fim = document.getElementById('fluxo-fim').value;
+
+            let recFluxo = 0;
+
+            dbPatients.forEach(p => {
+                if (p.pagamentos) {
+                    Object.values(p.pagamentos).forEach(pag => {
+                        if (pag.status === 'A Receber') {
+                            let dataValida = true;
+                            if (inicio || fim) {
+                                const parts = pag.date.split('/');
+                                if (parts.length === 3) {
+                                    const dPag = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                    if (inicio && dPag < inicio) dataValida = false;
+                                    if (fim && dPag > fim) dataValida = false;
+                                }
+                            }
+                            if (dataValida) {
+                                recFluxo += parseFloat(pag.val) || 0;
+                            }
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('flx-rec').innerText = recFluxo.toFixed(2).replace('.', ',');
+            document.getElementById('flx-sal').innerText = recFluxo.toFixed(2).replace('.', ',');
+        }
+
+        function showInadimplentesModal() {
+            const tbody = document.querySelector('#table-modal-inad tbody');
+            if (listInadimplentes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2">Nenhum paciente inadimplente encontrado.</td></tr>';
+            } else {
+                tbody.innerHTML = listInadimplentes.map(item => `
+                    <tr>
+                        <td>${item.nome}</td>
+                        <td>R$ ${item.valor.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('modal-inad').style.display = 'flex';
         }
 
         // --- SUB-AÇÕES DE PACIENTES COM FIREBASE ---
